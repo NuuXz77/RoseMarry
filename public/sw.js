@@ -9,6 +9,7 @@ const FILES_TO_CACHE = [
 // Pre-cache critical resources
 self.addEventListener("install", (event) => {
     console.log('[Laravel PWA] Service Worker installing...');
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => cache.addAll(FILES_TO_CACHE))

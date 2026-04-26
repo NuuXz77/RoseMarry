@@ -14,7 +14,7 @@ class Logout extends Component
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return $this->redirect(route('login'), navigate: true);
     }
 
     public function render()

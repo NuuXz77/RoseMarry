@@ -12,7 +12,6 @@
             :showButton="false"
             saveAction="logout"
             saveButtonText="Ya, Keluar"
-            saveButtonIcon="heroicon-o-arrow-right-on-rectangle"
             saveButtonClass="btn btn-error gap-2 btn-sm"
             modalSize="modal-box max-w-md"
         >

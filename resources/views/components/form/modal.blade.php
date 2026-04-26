@@ -56,16 +56,21 @@
                             <button type="submit" class="{{ $saveButtonClass }}" 
                                 wire:loading.attr="disabled"
                                 wire:target="{{ $saveAction }}">
-                                <span wire:loading.remove wire:target="{{ $saveAction }}" class="flex items-center gap-2">
+                                <!-- Normal State Icon -->
+                                <span wire:loading.remove wire:target="{{ $saveAction }}">
                                     @if($saveButtonIcon)
                                         <x-dynamic-component :component="$saveButtonIcon" class="w-5 h-5" />
                                     @endif
-                                    {{ $saveButtonText }}
                                 </span>
-                                <span wire:loading wire:target="{{ $saveAction }}" class="flex items-center gap-2">
-                                    <span class="loading loading-spinner loading-sm"></span>
-                                    Memproses...
-                                </span>
+                                
+                                <!-- Loading State Spinner -->
+                                <span wire:loading wire:target="{{ $saveAction }}" class="loading loading-spinner loading-sm"></span>
+                                
+                                <!-- Normal State Text -->
+                                <span wire:loading.remove wire:target="{{ $saveAction }}">{{ $saveButtonText }}</span>
+                                
+                                <!-- Loading State Text -->
+                                <span wire:loading wire:target="{{ $saveAction }}">Memproses...</span>
                             </button>
                         </div>
                     @endif

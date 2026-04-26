@@ -363,14 +363,19 @@
                     wire:loading.attr="disabled"
                     wire:target="submitOrder"
                     class="btn btn-primary btn-block btn-lg shadow-xl gap-3 h-16 text-base">
-                    <span wire:loading.remove wire:target="submitOrder" class="flex items-center gap-2">
+                    <!-- Normal State Icon -->
+                    <span wire:loading.remove wire:target="submitOrder">
                         <x-heroicon-o-check-circle class="w-6 h-6" />
-                        Konfirmasi & Bayar
                     </span>
-                    <span wire:loading wire:target="submitOrder" class="flex items-center gap-2">
-                        <span class="loading loading-spinner loading-sm"></span>
-                        Memproses...
-                    </span>
+                    
+                    <!-- Loading State Spinner -->
+                    <span wire:loading wire:target="submitOrder" class="loading loading-spinner loading-sm"></span>
+                    
+                    <!-- Normal State Text -->
+                    <span wire:loading.remove wire:target="submitOrder">Konfirmasi & Bayar</span>
+                    
+                    <!-- Loading State Text -->
+                    <span wire:loading wire:target="submitOrder">Memproses...</span>
                 </button>
 
                 <button wire:click="cancelCheckout" class="btn btn-ghost btn-block btn-sm text-base-content/50">
