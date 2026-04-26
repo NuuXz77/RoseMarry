@@ -17,7 +17,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('img/favicon/favicon-16x16.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- PWA -->
-    @pwaHead
+    @pwaHead('icon-72x72.png', '#FE6700')
     @livewireStyles
 </head>
 
