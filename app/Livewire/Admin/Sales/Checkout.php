@@ -209,11 +209,11 @@ class Checkout extends Component
                 ->first();
 
             $nextInvoice = 1;
-            if ($lastSaleToday && preg_match('/-(\d{4})$/', (string) $lastSaleToday->invoice_number, $matches)) {
+            if ($lastSaleToday && preg_match('/RSM\d{6}(\d{3})$/', (string) $lastSaleToday->invoice_number, $matches)) {
                 $nextInvoice = (int) $matches[1] + 1;
             }
 
-            $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . str_pad($nextInvoice, 4, '0', STR_PAD_LEFT);
+            $invoiceNumber = 'RSM' . now()->format('ymd') . str_pad($nextInvoice, 3, '0', STR_PAD_LEFT);
 
             $queueNumber = null;
             if ($hasQueueNumberColumn && $this->status_order === Sales::ORDER_STATUS_TAKE_AWAY) {

@@ -18,6 +18,8 @@
     <link rel="manifest" href="{{ asset('img/favicon/site.webmanifest') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- PWA -->
+    @pwaHead
     @livewireStyles
 </head>
 
@@ -188,6 +190,9 @@
     @endif
 
     @livewireScripts
+    @laravelPwa
+    @pwaUpdateNotifier
+    @pwaInstallButton
 </body>
 
 </html>

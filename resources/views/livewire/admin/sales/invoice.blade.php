@@ -41,7 +41,9 @@
                         @if($appAddress)
                             <p class="text-[10px] mt-1 leading-tight">{{ $appAddress }}</p>
                         @endif
-                        <p class="text-[10px] mt-1 opacity-60">Terima kasih atas pembelian Anda</p>
+                        @if($appTagline)
+                            <p class="text-[10px] mt-1 opacity-60">{{ $appTagline }}</p>
+                        @endif
                     </div>
 
                     {{-- Invoice Info --}}

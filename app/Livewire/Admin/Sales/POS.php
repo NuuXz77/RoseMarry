@@ -435,12 +435,12 @@ class POS extends Component
                 ->first();
 
             $nextNumber = 1;
-            if ($lastSaleToday && preg_match('/-(\d{4})$/', $lastSaleToday->invoice_number, $matches)) {
+            if ($lastSaleToday && preg_match('/RSM\d{6}(\d{3})$/', (string) $lastSaleToday->invoice_number, $matches)) {
                 $nextNumber = (int) $matches[1] + 1;
             }
 
-            // Generate invoice: INV-YYYYMMDD-0001
-            $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            // Generate invoice: RSMYYMMDD001
+            $invoiceNumber = 'RSM' . now()->format('ymd') . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
             $queueNumber = null;
             if ($hasQueueNumberColumn && $this->status_order === Sales::ORDER_STATUS_TAKE_AWAY) {
