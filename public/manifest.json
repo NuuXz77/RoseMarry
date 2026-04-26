@@ -4,7 +4,7 @@
     "description": "Rosemary POS",
     "start_url": "/",
     "background_color": "#ffffff",
-    "theme_color": "#6777ef",
+    "theme_color": "#FE6700",
     "display": "standalone",
     "orientation": "any",
     "icons": [
