@@ -1,8 +1,83 @@
 @use('Illuminate\Support\Facades\Storage')
-<div class="min-h-screen pb-10 px-3 sm:px-4 lg:px-0 invoice-page">
+<div class="min-h-screen pb-10 px-3 sm:px-4 lg:px-0 invoice-page" x-data="{
+        btStatus: 'idle',
+        btError: '',
+        btDeviceName: '',
+        receiptData: @js([
+            'appName' => $appName ?? 'TOKO',
+            'appAddress' => $appAddress ?? '',
+            'appTagline' => $appTagline ?? '',
+            'invoiceNumber' => $sale->invoice_number,
+            'createdAt' => $sale->created_at->format('d/m/Y H:i'),
+            'createdAtFull' => $sale->created_at->format('d/m/Y H:i:s'),
+            'cashier' => $sale->cashier?->name ?? '-',
+            'statusOrder' => $sale->status_order ?? 'Take away',
+            'serviceIdentity' => $sale->service_identity,
+            'tableNumber' => $sale->table_number ?? '',
+            'items' => $sale->items->map(fn($item) => [
+                'name' => $item->product?->name ?? 'Produk dihapus',
+                'qty' => $item->qty,
+                'price' => $item->price,
+                'subtotal' => $item->subtotal,
+            ])->toArray(),
+            'subtotal' => $sale->subtotal,
+            'discountAmount' => $sale->discount_amount,
+            'totalAmount' => $sale->total_amount,
+            'paymentMethod' => $sale->payment_method,
+            'paidAmount' => $sale->paid_amount,
+            'changeAmount' => $sale->change_amount,
+            'status' => $sale->status,
+        ]),
+
+        init() {
+            if (window.__thermalPrinter?.isConnected()) {
+                this.btStatus = 'connected';
+                this.btDeviceName = window.__thermalPrinter.getDeviceName();
+                this.printBluetooth();
+            }
+        },
+
+        async connectAndPrint() {
+            try {
+                this.btStatus = 'connecting';
+                this.btError = '';
+                if (!window.__thermalPrinter) {
+                    window.__thermalPrinter = new ThermalPrinter(32);
+                } else {
+                    window.__thermalPrinter.charPerLine = 32;
+                }
+                if (!window.__thermalPrinter.isConnected()) {
+                    await window.__thermalPrinter.connect();
+                }
+                this.btDeviceName = window.__thermalPrinter.getDeviceName();
+                this.btStatus = 'connected';
+                await this.printBluetooth();
+            } catch (err) {
+                this.btStatus = 'error';
+                this.btError = err.message || 'Gagal menghubungkan printer.';
+            }
+        },
+
+        async printBluetooth() {
+            try {
+                this.btStatus = 'printing';
+                window.__thermalPrinter.buildReceipt(this.receiptData);
+                await window.__thermalPrinter.send();
+                this.btStatus = 'success';
+                setTimeout(() => { this.btStatus = 'connected'; }, 2000);
+            } catch (err) {
+                this.btStatus = 'error';
+                this.btError = err.message || 'Gagal mencetak.';
+            }
+        },
+
+        get isConnected() {
+            return window.__thermalPrinter?.isConnected() || false;
+        },
+    }">
 
     {{-- Action Bar --}}
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden max-w-5xl mx-auto">
         <div class="flex items-center gap-3 sm:gap-4">
             <button wire:click="backToPOS" class="btn btn-ghost btn-sm btn-circle">
                 <x-heroicon-o-arrow-left class="w-5 h-5" />
@@ -12,15 +87,54 @@
                 <p class="text-sm text-base-content/50">{{ $sale->invoice_number }}</p>
             </div>
         </div>
-        <div class="flex w-full sm:w-auto items-center gap-2">
-            <button onclick="printInvoiceOnly()" class="btn btn-primary btn-sm gap-2 flex-1 sm:flex-none">
-                <x-heroicon-o-printer class="w-4 h-4" />
-                Cetak Struk
+        <div class="flex flex-wrap w-full sm:w-auto items-center gap-2">
+            {{-- Bluetooth Print --}}
+            <button @click="isConnected ? printBluetooth() : connectAndPrint()"
+                :disabled="btStatus === 'connecting' || btStatus === 'printing'"
+                class="btn btn-primary btn-sm gap-2 flex-1 sm:flex-none min-w-0">
+                <template x-if="btStatus === 'connecting' || btStatus === 'printing'">
+                    <span class="loading loading-spinner loading-xs"></span>
+                </template>
+                <template x-if="btStatus !== 'connecting' && btStatus !== 'printing'">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-4 h-4 shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                    </svg>
+                </template>
+                <span class="truncate"
+                    x-text="btStatus === 'connecting' ? 'Menghubungkan...' : btStatus === 'printing' ? 'Mencetak...' : btStatus === 'success' ? 'Terkirim ✓' : isConnected ? 'Cetak Bluetooth' : 'Hubungkan Printer'"></span>
             </button>
-            <button wire:click="backToPOS" class="btn btn-ghost btn-sm gap-2 flex-1 sm:flex-none">
-                <x-heroicon-o-arrow-path class="w-4 h-4" />
-                Transaksi Baru
+            {{-- Browser Print Fallback --}}
+            <button onclick="window.print()" class="btn btn-ghost btn-sm gap-2 flex-1 sm:flex-none min-w-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-4 h-4 shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                </svg>
+                <span class="truncate">Cetak Browser</span>
             </button>
+            <button wire:click="backToPOS" class="btn btn-ghost btn-sm gap-2 flex-1 sm:flex-none min-w-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-4 h-4 shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M2.985 19.644l3.181-3.183" />
+                </svg>
+                <span class="truncate">Transaksi Baru</span>
+            </button>
+        </div>
+    </div>
+
+    {{-- Bluetooth Status Banner --}}
+    <div class="print:hidden max-w-5xl mx-auto mb-4" x-show="btDeviceName || btError" x-cloak>
+        <div class="alert alert-sm" :class="btError ? 'alert-error' : 'alert-success'">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-4 h-4 shrink-0">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+            <span x-show="btDeviceName && !btError" x-text="'Terhubung ke: ' + btDeviceName"></span>
+            <span x-show="btError" x-text="btError"></span>
         </div>
     </div>
 
@@ -28,14 +142,15 @@
     <div class="flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto">
 
         {{-- LEFT: Struk / Receipt --}}
-        <div class="w-full lg:w-[340px] shrink-0 mx-auto lg:mx-0 invoice-print-area">
+        <div class="w-full max-w-[350px] lg:w-[350px] shrink-0 mx-auto lg:mx-0 invoice-print-area">
             <div class="invoice-paper card bg-white text-black rounded-none border-0 shadow-lg lg:shadow-xl">
                 <div class="invoice-body card-body p-4 sm:p-5 font-mono text-[12px]">
 
                     {{-- Header --}}
                     <div class="text-center border-b border-dashed border-black pb-3 mb-3">
                         @if($appLogo)
-                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}" class="h-10 mx-auto mb-1.5 object-contain" />
+                            <img src="{{ asset($appLogo) }}" alt="{{ $appName }}"
+                                class="h-10 mx-auto mb-1.5 object-contain" />
                         @endif
                         <h2 class="text-base font-bold uppercase tracking-wide">{{ $appName }}</h2>
                         @if($appAddress)
@@ -148,7 +263,8 @@
                         @endif
                         <div class="flex justify-between">
                             <span>Status</span>
-                            <span class="uppercase font-bold">{{ $sale->status === 'paid' ? 'LUNAS' : ($sale->status === 'unpaid' ? 'HUTANG' : 'BATAL') }}</span>
+                            <span
+                                class="uppercase font-bold">{{ $sale->status === 'paid' ? 'LUNAS' : ($sale->status === 'unpaid' ? 'HUTANG' : 'BATAL') }}</span>
                         </div>
                     </div>
 
@@ -171,7 +287,9 @@
                 <div class="card bg-base-100 border border-base-300">
                     <div class="card-body p-4">
                         <div class="text-[10px] uppercase tracking-wider text-base-content/40 font-bold">Total</div>
-                        <div class="text-xl font-black text-primary">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</div>
+                        <div class="text-xl font-black text-primary">Rp
+                            {{ number_format($sale->total_amount, 0, ',', '.') }}
+                        </div>
                     </div>
                 </div>
                 <div class="card bg-base-100 border border-base-300">
@@ -203,7 +321,8 @@
                                 <div class="avatar shrink-0">
                                     <div class="w-10 h-10 rounded-lg bg-base-200 overflow-hidden">
                                         @if($item->product?->foto_product)
-                                            <img src="{{ Storage::url($item->product->foto_product) }}" alt="{{ $item->product->name }}" class="object-cover w-full h-full" />
+                                            <img src="{{ Storage::url($item->product->foto_product) }}"
+                                                alt="{{ $item->product->name }}" class="object-cover w-full h-full" />
                                         @else
                                             <div class="w-full h-full flex items-center justify-center">
                                                 <x-heroicon-o-photo class="w-4 h-4 text-base-content/20" />
@@ -212,8 +331,11 @@
                                     </div>
                                 </div>
                                 <div class="grow min-w-0">
-                                    <p class="font-bold text-sm truncate">{{ $item->product?->name ?? 'Produk dihapus' }}</p>
-                                    <p class="text-xs text-base-content/50">{{ $item->qty }} × Rp {{ number_format($item->price, 0, ',', '.') }}</p>
+                                    <p class="font-bold text-sm truncate">{{ $item->product?->name ?? 'Produk dihapus' }}
+                                    </p>
+                                    <p class="text-xs text-base-content/50">{{ $item->qty }} × Rp
+                                        {{ number_format($item->price, 0, ',', '.') }}
+                                    </p>
                                 </div>
                                 <div class="text-sm font-black text-primary shrink-0">
                                     Rp {{ number_format($item->subtotal, 0, ',', '.') }}
@@ -265,12 +387,36 @@
 
             {{-- Action Buttons --}}
             <div class="flex flex-col sm:flex-row gap-3">
-                <button onclick="printInvoiceOnly()" class="btn btn-primary gap-2 flex-1">
-                    <x-heroicon-o-printer class="w-5 h-5" />
-                    Cetak Struk
+                <button @click="isConnected ? printBluetooth() : connectAndPrint()"
+                    :disabled="btStatus === 'connecting' || btStatus === 'printing'"
+                    class="btn btn-primary gap-2 flex-1">
+                    <template x-if="btStatus === 'connecting' || btStatus === 'printing'">
+                        <span class="loading loading-spinner loading-sm"></span>
+                    </template>
+                    <template x-if="btStatus !== 'connecting' && btStatus !== 'printing'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5 shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                        </svg>
+                    </template>
+                    <span
+                        x-text="btStatus === 'connecting' ? 'Menghubungkan...' : btStatus === 'printing' ? 'Mencetak...' : btStatus === 'success' ? 'Terkirim ✓' : isConnected ? 'Cetak Bluetooth' : 'Hubungkan Printer'"></span>
+                </button>
+                <button onclick="window.print()" class="btn btn-ghost gap-2 flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5 shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                    </svg>
+                    Cetak Browser
                 </button>
                 <button wire:click="backToPOS" class="btn btn-ghost gap-2 flex-1">
-                    <x-heroicon-o-arrow-path class="w-5 h-5" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5 shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M2.985 19.644l3.181-3.183" />
+                    </svg>
                     Transaksi Baru
                 </button>
             </div>
@@ -346,7 +492,8 @@
             }
 
             /* Reset page container */
-            html, body {
+            html,
+            body {
                 width: 100% !important;
                 height: auto !important;
                 margin: 0 !important;
@@ -365,7 +512,7 @@
             }
 
             /* Kill the flex layout */
-            .invoice-page > div {
+            .invoice-page>div {
                 display: block !important;
                 width: 100% !important;
                 max-width: 100% !important;
@@ -394,41 +541,67 @@
             }
 
             .invoice-body {
-                padding: 3mm !important;
+                padding: 0.5mm 1mm !important;
                 overflow: visible !important;
             }
 
             .invoice-body::before {
-                display: block !important;
-                visibility: visible !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
+                display: none !important;
+            }
+
+            /* Remove gaps on flex items for print */
+            .invoice-body .space-y-1 {
+                gap: 0 !important;
+            }
+
+            .invoice-body .flex {
+                gap: 0 !important;
+            }
+
+            .invoice-body .flex span:last-child {
+                margin-left: auto !important;
             }
 
             /* Table */
             .invoice-print-area table {
                 table-layout: fixed !important;
                 width: 100% !important;
+                margin: 0 !important;
+                border-collapse: collapse !important;
             }
 
             .invoice-print-area table th:nth-child(1),
-            .invoice-print-area table td:nth-child(1) { width: 50% !important; }
+            .invoice-print-area table td:nth-child(1) {
+                width: 52% !important;
+            }
 
             .invoice-print-area table th:nth-child(2),
-            .invoice-print-area table td:nth-child(2) { width: 12% !important; }
+            .invoice-print-area table td:nth-child(2) {
+                width: 12% !important;
+            }
 
             .invoice-print-area table th:nth-child(3),
-            .invoice-print-area table td:nth-child(3) { width: 38% !important; }
+            .invoice-print-area table td:nth-child(3) {
+                width: 36% !important;
+            }
+
+            .invoice-print-area table td,
+            .invoice-print-area table th {
+                padding: 1mm 0.5mm !important;
+            }
 
             .overflow-x-auto {
                 overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Remove divider gaps */
+            .invoice-body .border-t {
+                margin: 1mm 0 !important;
             }
         }
     </style>
 
-    <script>
-        function printInvoiceOnly() {
-            window.print();
-        }
-    </script>
+    <script src="{{ asset('js/thermal-printer.js') }}?v={{ now()->timestamp }}"></script>
 </div>
