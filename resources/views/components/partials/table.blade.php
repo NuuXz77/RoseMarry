@@ -13,15 +13,23 @@
         <thead>
             <tr>
                 @foreach($columns as $column)
+                    @php
+                        $alignmentClass = 'justify-start';
+                        if (isset($column['class']) && str_contains($column['class'], 'text-center')) {
+                            $alignmentClass = 'justify-center';
+                        } elseif (isset($column['class']) && str_contains($column['class'], 'text-right')) {
+                            $alignmentClass = 'justify-end';
+                        }
+                    @endphp
                     <th class="{{ $column['class'] ?? '' }}">
                         @if(isset($column['sortable']) && $column['sortable'])
-                            <button wire:click="sortBy('{{ $column['field'] }}')" class="flex items-center justify-center gap-1 w-full hover:text-primary">
+                            <button wire:click="sortBy('{{ $column['field'] }}')" class="flex items-center {{ $alignmentClass }} gap-1 w-full hover:text-primary transition-colors">
                                 {{ $column['label'] }}
                                 @if($sortField === $column['field'])
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="w-4 h-4" />
+                                        <x-heroicon-o-chevron-up class="w-4 h-4 text-primary" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="w-4 h-4" />
+                                        <x-heroicon-o-chevron-down class="w-4 h-4 text-primary" />
                                     @endif
                                 @else
                                     <x-heroicon-o-chevron-up-down class="w-4 h-4 opacity-30" />

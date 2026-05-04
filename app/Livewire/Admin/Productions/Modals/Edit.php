@@ -81,7 +81,12 @@ class Edit extends Component
         return view('livewire.admin.productions.modals.edit', [
             'products' => Products::where('status', true)->get(),
             'groups' => StudentGroups::where('status', true)->get(),
-            'shifts' => Shift::where('status', true)->get(),
+            'shifts' => Shift::where('status', true)->get()->map(function ($shift) {
+                return [
+                    'id' => $shift->id,
+                    'name' => "{$shift->name} (" . $shift->start_time->format('H:i') . " - " . $shift->end_time->format('H:i') . ")",
+                ];
+            }),
         ]);
     }
 }

@@ -48,6 +48,7 @@
                     ['label' => 'No', 'class' => 'w-16'],
                     ['label' => 'Nama Material'],
                     ['label' => 'Kategori & Satuan'],
+                    ['label' => 'Harga Modal'],
                     ['label' => 'Supplier'],
                     ['label' => 'Stok Saat Ini', 'class' => 'text-center'],
                     ['label' => 'Min. Stok'],
@@ -69,6 +70,12 @@
                             <div class="flex flex-wrap gap-1">
                                 <span class="badge badge-sm badge-soft badge-info">{{ $material->category->name ?? '-' }}</span>
                                 <span class="badge badge-sm badge-soft badge-warning">{{ $material->unit->name ?? '-' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-sm font-bold text-primary">
+                                Rp {{ number_format($material->price, 0, ',', '.') }}
+                                <span class="text-[10px] font-normal text-base-content/40">/ {{ $material->unit->name ?? 'unit' }}</span>
                             </div>
                         </td>
                         <td>

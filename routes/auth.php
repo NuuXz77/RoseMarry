@@ -160,6 +160,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:product-materials.view')->group(function () {
         Route::get('/product-materials', App\Livewire\Admin\ProductMaterials\Index::class)->name('product-materials.index');
+        Route::get('/product-materials/{product}', App\Livewire\Admin\ProductMaterials\Detail::class)->whereNumber('product')->name('product-materials.detail');
     });
 
     Route::middleware('can:product-wastes.view')->group(function () {

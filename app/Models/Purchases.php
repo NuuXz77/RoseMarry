@@ -16,6 +16,7 @@ class Purchases extends Model
 {
     protected $fillable = [
         'supplier_id',    // FK ke suppliers
+        'guest_supplier', // Nama supplier manual jika tidak ada di data master
         'invoice_number', // Nomor invoice unik
         'date',           // Tanggal pembelian
         'total_amount',   // Total jumlah
@@ -50,6 +51,6 @@ class Purchases extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(PurchaseItems::class);
+        return $this->hasMany(PurchaseItems::class, 'purchase_id');
     }
 }

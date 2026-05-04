@@ -66,7 +66,10 @@ class Create extends Component
 
         return view('livewire.admin.product-materials.modals.create', [
             'availableProducts' => $availableProducts,
-            'availableMaterials' => $availableMaterials,
+            'availableMaterials' => $availableMaterials->map(fn($m) => [
+                'id' => $m->id,
+                'name' => "{$m->name} (" . ($m->unit->name ?? '-') . ")",
+            ]),
         ]);
     }
 }

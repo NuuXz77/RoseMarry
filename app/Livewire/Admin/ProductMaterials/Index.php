@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin\ProductMaterials;
 
-use App\Models\ProductMaterials;
+use App\Models\Products;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -42,31 +42,35 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function edit($id)
+    public function detail($id)
     {
-        $this->dispatch('open-edit-modal', id: $id);
-        $this->dispatch('open-modal', id: 'modal_edit_recipe');
+        return redirect()->route('product-materials.detail', ['product' => $id]);
     }
 
-    public function confirmDelete($id)
+    public function deleteRecipe($productId)
     {
-        $this->dispatch('confirm-delete', id: $id);
+        $this->dispatch('confirm-delete-recipe', productId: $productId);
         $this->dispatch('open-modal', id: 'modal_delete_recipe');
     }
 
     public function render()
     {
-        $recipes = ProductMaterials::query()
-            ->with(['product.category', 'material.category', 'material.unit'])
+        // We query Products instead of ProductMaterials to group them
+        $products = Products::query()
+            ->with(['category', 'division'])
+            ->withCount('materials') // Count how many materials are in the recipe
             ->when($this->search, function ($query) {
-                $query->whereHas('product', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'))
-                      ->orWhereHas('material', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'));
+                $query->where('name', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('category', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'));
             })
+            // Only show products that have at least one material in their BOM
+            // (Optional: remove this if you want to see products WITHOUT recipes too)
+            ->whereHas('materials') 
             ->orderBy('created_at', $this->filterSort === 'oldest' ? 'asc' : 'desc')
             ->paginate($this->perPage);
 
         return view('livewire.admin.product-materials.index', [
-            'recipes' => $recipes,
+            'products' => $products,
         ]);
     }
 }

@@ -54,11 +54,10 @@
 
             <x-partials.table
                 :columns="[
-                    ['label' => 'No', 'class' => 'w-12'],
                     ['label' => 'Invoice', 'field' => 'invoice_number', 'sortable' => true],
                     ['label' => 'Supplier'],
                     ['label' => 'Total', 'field' => 'total_amount', 'sortable' => true],
-                    ['label' => 'Status', 'field' => 'status'],
+                    ['label' => 'Status', 'field' => 'status', 'class' => 'text-center'],
                     ['label' => 'Tanggal', 'field' => 'created_at', 'sortable' => true],
                     ['label' => 'Aksi', 'class' => 'text-center']
                 ]"
@@ -69,13 +68,38 @@
                 emptyIcon="heroicon-o-truck">
 
                 @foreach ($purchases as $index => $purchase)
-                    <tr wire:key="purchase-{{ $purchase->id }}" class="hover:bg-base-200 transition-colors duration-150">
-                        <td>{{ $purchases->firstItem() + $index }}</td>
-                        <td>{{ $purchase->invoice_number }}</td>
-                        <td>{{ $purchase->supplier?->name ?? '-' }}</td>
-                        <td>Rp {{ number_format($purchase->total_amount ?? 0, 0, ',', '.') }}</td>
-                        <td>{{ ucfirst($purchase->status ?? '-') }}</td>
-                        <td>{{ $purchase->created_at->format('d M Y H:i') }}</td>
+                    <tr wire:key="purchase-{{ $purchase->id }}" class="hover:bg-primary/5 transition-colors duration-150 group">
+                        <td>
+                            <span class="font-mono font-bold text-xs bg-base-200 px-2 py-1 rounded-md">{{ $purchase->invoice_number }}</span>
+                        </td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm">{{ $purchase->supplier?->name ?? $purchase->guest_supplier ?? '-' }}</span>
+                                <span class="text-[10px] opacity-40 italic">{{ $purchase->supplier ? 'Supplier Terdaftar' : 'Guest Supplier' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="font-mono font-black text-primary">Rp {{ number_format($purchase->total_amount ?? 0, 0, ',', '.') }}</span>
+                        </td>
+                        <td class="text-center">
+                            @php
+                                $statusClass = match($purchase->status) {
+                                    'received' => 'badge-soft badge-success',
+                                    'pending' => 'badge-soft badge-warning',
+                                    'cancelled' => 'badge-soft badge-error',
+                                    default => 'badge-soft badge-ghost'
+                                };
+                            @endphp
+                            <span class="badge {{ $statusClass }} badge-sm font-bold uppercase tracking-wider">
+                                {{ $purchase->status ?? '-' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold">{{ $purchase->created_at->format('d M Y') }}</span>
+                                <span class="text-[10px] opacity-50">{{ $purchase->created_at->format('H:i') }} WIB</span>
+                            </div>
+                        </td>
                         <td class="text-center">
                             <div class="flex justify-center">
                                 <x-partials.dropdown-action

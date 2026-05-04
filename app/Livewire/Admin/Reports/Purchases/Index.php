@@ -62,7 +62,8 @@ class Index extends Component
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
                     $sub->where('invoice_number', 'like', '%' . $this->search . '%')
-                        ->orWhereHas('supplier', fn($s) => $s->where('name', 'like', '%' . $this->search . '%'));
+                        ->orWhereHas('supplier', fn($s) => $s->where('name', 'like', '%' . $this->search . '%'))
+                        ->orWhere('guest_supplier', 'like', '%' . $this->search . '%');
                 });
             });
 

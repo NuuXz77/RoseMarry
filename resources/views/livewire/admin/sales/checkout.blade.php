@@ -143,6 +143,7 @@
                 </div>
 
                 {{-- Payment method card --}}
+                @if($payment_status === 'paid')
                 <div class="card bg-base-100 border border-base-300">
                     <div class="card-body p-6">
                         <h2 class="font-bold mb-4 flex items-center gap-2">
@@ -194,6 +195,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 {{-- Payment Status card --}}
                 <div class="card bg-base-100 border border-base-300">

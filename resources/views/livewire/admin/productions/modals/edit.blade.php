@@ -18,46 +18,34 @@
             :required="true"
             validatorMessage="Tanggal produksi wajib diisi" />
 
-        <x-form.select
+        <x-form.searchable-select
             label="Shift"
             name="shift_id"
             icon="heroicon-o-clock"
             placeholder="Pilih Shift"
-            wireModel="shift_id"
-            :required="true"
-            validatorMessage="Shift wajib dipilih">
-            @foreach ($shifts as $shift)
-                <option value="{{ $shift->id }}">{{ $shift->name }} ({{ $shift->start_time->format('H:i') }} - {{ $shift->end_time->format('H:i') }})</option>
-            @endforeach
-        </x-form.select>
+            wire:model="shift_id"
+            :options="$shifts"
+            :required="true" />
     </div>
 
-    <x-form.select
+    <x-form.searchable-select
         label="Produk yang Dibuat"
         name="product_id"
         icon="heroicon-o-cube"
         placeholder="Pilih Produk"
-        wireModel="product_id"
-        :required="true"
-        validatorMessage="Produk wajib dipilih">
-        @foreach ($products as $product)
-            <option value="{{ $product->id }}">{{ $product->name }}</option>
-        @endforeach
-    </x-form.select>
+        wire:model="product_id"
+        :options="$products"
+        :required="true" />
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <x-form.select
+        <x-form.searchable-select
             label="Kelompok Pelaksana"
             name="student_group_id"
             icon="heroicon-o-users"
             placeholder="Pilih Kelompok"
-            wireModel="student_group_id"
-            :required="true"
-            validatorMessage="Kelompok wajib dipilih">
-            @foreach ($groups as $group)
-                <option value="{{ $group->id }}">{{ $group->name }}</option>
-            @endforeach
-        </x-form.select>
+            wire:model="student_group_id"
+            :options="$groups"
+            :required="true" />
 
         <x-form.input
             label="Jumlah Produksi (pcs)"

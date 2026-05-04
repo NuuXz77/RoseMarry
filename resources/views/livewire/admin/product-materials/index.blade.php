@@ -42,7 +42,8 @@
                     </div>
                 </div>
 
-                <div class="w-full md:w-auto flex justify-end">
+                <div class="w-full md:w-auto flex justify-end gap-2">
+                    <livewire:admin.product-materials.modals.bulk-create />
                     <livewire:admin.product-materials.modals.create />
                 </div>
             </div>
@@ -53,37 +54,58 @@
             <x-partials.table :columns="[
         ['label' => 'No', 'class' => 'w-16'],
         ['label' => 'Nama Produk'],
-        ['label' => 'Bahan Baku (Inventory)'],
-        ['label' => 'Kebutuhan Jumlah'],
+        ['label' => 'Divisi & Kategori'],
+        ['label' => 'Total Bahan'],
         ['label' => 'Aksi', 'class' => 'text-center w-20']
-    ]" :data="$recipes" emptyMessage="Belum ada data resep produk.">
-                @foreach ($recipes as $index => $recipe)
-                    <tr wire:key="recipe-{{ $recipe->id }}" class="hover:bg-base-200/50 transition-colors">
-                        <td class="font-medium text-base-content/50">{{ $recipes->firstItem() + $index }}</td>
+    ]" :data="$products" emptyMessage="Belum ada data resep produk.">
+                @foreach ($products as $index => $product)
+                    <tr wire:key="product-{{ $product->id }}" class="hover:bg-base-200/50 transition-colors">
+                        <td class="font-medium text-base-content/50">{{ $products->firstItem() + $index }}</td>
                         <td>
-                            <div class="font-bold">{{ $recipe->product->name ?? '-' }}</div>
+                            <div class="font-bold">{{ $product->name }}</div>
                             <div class="text-[10px] text-base-content/40 italic">
-                                Kategori: {{ $recipe->product->category->name ?? '-' }}
+                                Barcode: {{ $product->barcode ?? '-' }}
                             </div>
                         </td>
                         <td>
-                            <div class="font-bold">{{ $recipe->material->name ?? '-' }}</div>
-                            <div class="text-[10px] text-base-content/40 italic">
-                                Kategori: {{ $recipe->material->category->name ?? '-' }}
+                            <div class="badge badge-neutral badge-xs">{{ $product->division->name ?? '-' }}</div>
+                            <div class="text-[10px] text-base-content/40 mt-1">
+                                Kategori: {{ $product->category->name ?? '-' }}
                             </div>
                         </td>
                         <td>
-                            <div class="font-mono font-semibold">{{ number_format($recipe->qty_used, 3, ',', '.') }} {{ $recipe->material->unit->name ?? 'Unit' }}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="badge badge-primary font-bold">{{ $product->materials_count }}</span>
+                                <span class="text-xs text-base-content/60">Bahan</span>
+                            </div>
                         </td>
                         <td class="text-center">
-                            <x-partials.dropdown-action :id="$recipe->id" />
+                            <div class="dropdown dropdown-left dropdown-end">
+                                <label tabindex="0" class="btn btn-ghost btn-xs">
+                                    <x-heroicon-o-ellipsis-vertical class="w-4 h-4" />
+                                </label>
+                                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 border border-base-200">
+                                    <li>
+                                        <a href="{{ route('product-materials.detail', $product->id) }}" wire:navigate>
+                                            <x-heroicon-o-eye class="w-4 h-4 text-primary" />
+                                            Detail Resep
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button type="button" wire:click="deleteRecipe({{ $product->id }})">
+                                            <x-heroicon-o-trash class="w-4 h-4 text-error" />
+                                            Hapus Resep
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                 @endforeach
             </x-partials.table>
 
             <div class="mt-6">
-                <x-partials.pagination :paginator="$recipes" :perPage="$perPage" />
+                <x-partials.pagination :paginator="$products" :perPage="$perPage" />
             </div>
         </div>
     </div>

@@ -11,32 +11,23 @@
     modalSize="modal-box max-w-2xl">
 
     <div class="grid grid-cols-1 gap-4">
-        <x-form.select
+        <x-form.searchable-select
             label="Pilih Produk"
             name="product_id"
             icon="heroicon-o-cube"
-            placeholder="-- Pilih Produk --"
-            wireModel="product_id"
+            placeholder="Pilih Produk"
+            wire:model="product_id"
             :options="$availableProducts"
-            optionValue="id"
-            optionLabel="name"
-            :required="true"
-            validatorMessage="Produk wajib dipilih" />
+            :required="true" />
 
-        <x-form.select
+        <x-form.searchable-select
             label="Pilih Inventory/Bahan"
             name="material_id"
             icon="heroicon-o-archive-box"
-            placeholder="-- Pilih Bahan Baku --"
-            wireModel="material_id"
-            :required="true"
-            validatorMessage="Bahan baku wajib dipilih">
-            @foreach ($availableMaterials as $material)
-                <option value="{{ $material->id }}">
-                    {{ $material->name }} ({{ $material->unit->name ?? '-' }})
-                </option>
-            @endforeach
-        </x-form.select>
+            placeholder="Pilih Bahan Baku"
+            wire:model="material_id"
+            :options="$availableMaterials"
+            :required="true" />
 
         @php
             $selectedMaterial = $availableMaterials->firstWhere('id', $material_id);
@@ -48,7 +39,7 @@
             type="number"
             icon="heroicon-o-calculator"
             placeholder="Contoh: 1.5"
-            wireModel="qty_used"
+            wire:model="qty_used"
             step="0.001"
             min="0.001"
             :required="true"

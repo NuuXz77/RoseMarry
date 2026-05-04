@@ -285,7 +285,7 @@
                                     <td class="text-xs">{{ $purchase->date->format('d M Y') }}</td>
                                     <td>
                                         <div class="flex flex-col">
-                                            <span class="font-medium">{{ $purchase->supplier->name ?? '-' }}</span>
+                                            <span class="font-medium">{{ $purchase->supplier->name ?? $purchase->guest_supplier ?? '-' }}</span>
                                             <span
                                                 class="text-[10px] opacity-40">{{ $purchase->supplier->phone ?? '' }}</span>
                                         </div>

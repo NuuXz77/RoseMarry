@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::table('purchases', function (Blueprint $table) {
             $table->unsignedBigInteger('supplier_id')->nullable()->change();
-            $table->string('guest_supplier')->nullable()->after('supplier_id');
+            if (!Schema::hasColumn('purchases', 'guest_supplier')) {
+                $table->string('guest_supplier')->nullable()->after('supplier_id');
+            }
         });
     }
 
