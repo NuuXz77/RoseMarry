@@ -117,9 +117,9 @@
 
                         $prodBadge = match($sale->production_status) {
                             'cooking' => 'badge-info',
-                            'done' => 'badge-success',
+                            'done' => 'badge-info',
                             'delivered' => 'badge-primary',
-                            'completed' => 'badge-neutral',
+                            'completed' => 'badge-success',
                             default => 'badge-warning',
                         };
                     @endphp
@@ -151,7 +151,7 @@
                             <x-partials.dropdown-action
                                 :id="$sale->id"
                                 :showView="true"
-                                :viewRoute="route('sales.detail', $sale->id)"
+                                :viewRoute="route('kasir.invoice', $sale->id)"
                                 :showEdit="false"
                                 :showDelete="$canDeleteSale"
                                 deleteMethod="confirmDelete"

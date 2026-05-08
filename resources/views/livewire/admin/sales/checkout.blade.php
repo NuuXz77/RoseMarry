@@ -285,7 +285,22 @@
 
                 {{-- Cash input (only when cash & paid) --}}
                 @if($payment_status === 'paid' && $payment_method === 'cash')
-                    <div class="card bg-base-100 border border-base-300">
+                    <div class="card bg-base-100 border border-base-300"
+                         x-data="{
+                            paidAmount: {{ $paid_amount }},
+                            totalAmount: {{ $total_amount }},
+                            get changeAmount() {
+                                return Math.max(0, this.paidAmount - this.totalAmount);
+                            },
+                            setAmount(val) {
+                                this.paidAmount = val;
+                                this.syncToWire();
+                            },
+                            syncToWire() {
+                                $wire.set('paid_amount', this.paidAmount, false);
+                                $wire.set('change_amount', this.changeAmount, false);
+                            }
+                         }">
                         <div class="card-body p-6">
                             <h2 class="font-bold mb-4 flex items-center gap-2">
                                 <x-heroicon-o-banknotes class="w-5 h-5 text-primary" />
@@ -295,7 +310,8 @@
                             {{-- Input --}}
                             <label class="input input-bordered flex items-center gap-2 w-full mb-3 focus-within:input-primary">
                                 <span class="text-xs font-bold text-base-content/50 shrink-0">Rp</span>
-                                <input type="number" wire:model.live="paid_amount"
+                                <input type="number" x-model.number="paidAmount"
+                                    @blur="syncToWire()"
                                     class="grow font-black text-base text-primary bg-transparent focus:outline-none"
                                     placeholder="0" />
                             </label>
@@ -303,12 +319,12 @@
                             {{-- Quick amount chips --}}
                             <div class="flex flex-wrap gap-1.5 mb-4">
                                 @foreach([5000, 10000, 20000, 50000, 100000] as $amount)
-                                    <button type="button" wire:click="setPaidAmount({{ $amount }})"
+                                    <button type="button" @click="setAmount({{ $amount }})"
                                         class="btn btn-xs btn-ghost border border-base-300 hover:border-primary hover:text-primary font-mono rounded-full px-3 transition-all">
                                         {{ number_format($amount, 0, ',', '.') }}
                                     </button>
                                 @endforeach
-                                <button type="button" wire:click="setPaidAmount({{ $total_amount }})"
+                                <button type="button" @click="setAmount(totalAmount)"
                                     class="btn btn-xs btn-primary rounded-full px-3">
                                     Uang Pas
                                 </button>
@@ -318,8 +334,8 @@
                             <div class="flex items-center justify-between px-4 py-3 rounded-xl bg-base-200/60 border border-base-300">
                                 <div>
                                     <p class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-0.5">Kembalian</p>
-                                    <p class="text-lg font-black {{ $change_amount > 0 ? 'text-success' : 'text-base-content/60' }}">
-                                        Rp {{ number_format($change_amount, 0, ',', '.') }}
+                                    <p class="text-lg font-black" :class="changeAmount > 0 ? 'text-success' : 'text-base-content/60'">
+                                        Rp <span x-text="new Intl.NumberFormat('id-ID').format(changeAmount)"></span>
                                     </p>
                                 </div>
                                 <div class="w-9 h-9 rounded-full bg-base-300 flex items-center justify-center text-base-content/30">

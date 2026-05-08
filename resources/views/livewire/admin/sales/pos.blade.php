@@ -102,6 +102,29 @@
             this.cart[productId] = item;
         },
 
+        setCartQty(product, qty) {
+            qty = parseInt(qty) || 0;
+            if (qty <= 0) {
+                delete this.cart[product.id];
+                return;
+            }
+            if (qty > product.stock) {
+                qty = product.stock;
+                this.clientError = `Stok ${product.name} maksimal ${product.stock}.`;
+            } else {
+                this.clientError = '';
+            }
+            this.cart[product.id] = {
+                id: product.id,
+                name: product.name,
+                price: Number(product.price),
+                stock: Number(product.stock),
+                image: product.image || null,
+                qty: qty,
+                subtotal: Number(product.price) * qty,
+            };
+        },
+
         removeItem(productId) {
             delete this.cart[productId];
         },
@@ -196,21 +219,47 @@
                     {{-- Search & Sort Bar --}}
                     <div class="flex flex-col sm:flex-row items-stretch gap-2 shrink-0">
                         <div class="grow">
-                            <label class="input input-bordered flex items-center gap-2 w-full">
-                                <x-heroicon-o-magnifying-glass class="w-4 h-4 text-base-content/50" />
-                                <input type="text" wire:model.live.debounce.300ms="search"
-                                    placeholder="Cari menu..."
-                                    class="grow border-none focus:outline-none text-sm" />
-                            </label>
+                            <x-form.input
+                                name="search"
+                                wireModelModifier="live.debounce.300ms"
+                                wireModel="search"
+                                placeholder="Cari menu..."
+                                icon="heroicon-o-magnifying-glass"
+                                size="input-sm"
+                                containerClass="mb-0" />
                         </div>
                         <div class="w-full sm:w-52 shrink-0">
-                            <select wire:model.live="sortBy" class="select select-bordered w-full text-sm">
+                            <x-form.select
+                                name="sortBy"
+                                wireModelModifier="live"
+                                wireModel="sortBy"
+                                placeholder=""
+                                class="select-sm"
+                                containerClass="mb-0">
                                 <option value="stock_desc">Paling Banyak (Tersedia)</option>
                                 <option value="stock_asc">Paling Sedikit (Tersedia)</option>
                                 <option value="price_desc">Paling Mahal</option>
                                 <option value="price_asc">Paling Murah</option>
-                            </select>
+                            </x-form.select>
                         </div>
+
+                        {{-- Admin Quick-Action Shortcuts --}}
+                        @can('pos.quick-add-product')
+                            <button type="button"
+                                class="btn btn-sm btn-success gap-1.5 shrink-0 shadow-sm shadow-success/20 hover:shadow-md hover:shadow-success/30 transition-all duration-200"
+                                @click="$dispatch('open-modal', { id: 'pos-quick-create-product-modal' })">
+                                <x-heroicon-o-plus-circle class="w-4 h-4" />
+                                <span class="hidden lg:inline text-xs">Produk Baru</span>
+                            </button>
+                        @endcan
+                        @can('pos.quick-adjust-stock')
+                            <button type="button"
+                                class="btn btn-sm btn-warning gap-1.5 shrink-0 shadow-sm shadow-warning/20 hover:shadow-md hover:shadow-warning/30 transition-all duration-200"
+                                @click="$dispatch('open-modal', { id: 'pos-quick-adjust-stock-modal' })">
+                                <x-heroicon-o-adjustments-horizontal class="w-4 h-4" />
+                                <span class="hidden lg:inline text-xs">Adjust Stok</span>
+                            </button>
+                        @endcan
                     </div>
 
                     {{-- Category Filter Tabs (Alpine.js — instant, no server round-trip) --}}
@@ -306,15 +355,16 @@
                                             {{ $product->name }}
                                         </h3>
 
+                                        <span class="text-xs font-black text-primary tracking-tight">
+                                            Rp {{ number_format($product->price, 0, ',', '.') }}
+                                        </span>
+
                                         <div class="flex items-center gap-1.5">
                                             <progress class="progress {{ $progressClass }} h-[2px] w-full rounded-full" value="{{ $stockPct }}" max="100"></progress>
                                             <span class="text-[8px] font-bold text-base-content/40 tabular-nums shrink-0">{{ $qty }}</span>
                                         </div>
 
                                         <div class="flex items-center justify-between" @click.stop>
-                                            <span class="text-xs font-black text-primary tracking-tight">
-                                                Rp {{ number_format($product->price, 0, ',', '.') }}
-                                            </span>
 
                                             @if($isAvail)
                                                 <template x-if="qtyInCart({{ $product->id }}) === 0">
@@ -329,17 +379,27 @@
                                                     <div class="flex items-center gap-1">
                                                         <button type="button"
                                                             @click.stop="decreaseQty({{ $product->id }})"
-                                                            class="w-7 h-7 flex items-center justify-center rounded-full bg-base-200 text-base-content/70 hover:bg-primary/15 hover:text-primary transition-all duration-200 active:scale-90">
+                                                            class="w-6 h-6 flex items-center justify-center rounded-full bg-base-200 text-base-content/70 hover:bg-primary/15 hover:text-primary transition-all duration-200 active:scale-90">
                                                             <x-heroicon-s-minus class="w-3 h-3" />
                                                         </button>
 
-                                                        <span class="min-w-[1.25rem] text-center text-xs font-black text-primary tabular-nums"
-                                                            x-text="qtyInCart({{ $product->id }})"></span>
+                                                        <input type="text" inputmode="numeric" pattern="[0-9]*"
+                                                            :value="qtyInCart({{ $product->id }})"
+                                                            @change.stop="setCartQty({{ \Illuminate\Support\Js::from($productPayload) }}, $event.target.value)"
+                                                            @click.stop
+                                                            @keydown.enter.stop="$event.target.blur()"
+                                                            class="w-8 h-6 text-center text-[11px] font-black text-primary tabular-nums bg-base-200/60 border border-base-300 rounded-md focus:outline-none focus:border-primary" />
 
                                                         <button type="button"
                                                             @click.stop="addToCart({{ \Illuminate\Support\Js::from($productPayload) }})"
-                                                            class="w-7 h-7 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80 transition-all duration-200 active:scale-90">
+                                                            class="w-6 h-6 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80 transition-all duration-200 active:scale-90">
                                                             <x-heroicon-s-plus class="w-3 h-3" />
+                                                        </button>
+
+                                                        <button type="button"
+                                                            @click.stop="removeItem({{ $product->id }})"
+                                                            class="w-6 h-6 flex items-center justify-center rounded-full bg-error/10 text-error hover:bg-error hover:text-white transition-all duration-200 active:scale-90">
+                                                            <x-heroicon-s-trash class="w-3 h-3" />
                                                         </button>
                                                     </div>
                                                 </template>
@@ -516,4 +576,14 @@
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    {{--  POS ADMIN SHORTCUT MODALS                                --}}
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    @can('pos.quick-add-product')
+        @livewire('admin.sales.modals.pos-quick-create-product', key('pos-quick-create-product'))
+    @endcan
+    @can('pos.quick-adjust-stock')
+        @livewire('admin.sales.modals.pos-quick-adjust-stock', key('pos-quick-adjust-stock'))
+    @endcan
 </div>

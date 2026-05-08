@@ -190,6 +190,8 @@
     @livewireScripts
     @laravelPwa
     @pwaInstallButton
+    
+    <x-partials.pwa-onboarding />
 </body>
 
 </html>

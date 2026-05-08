@@ -145,6 +145,10 @@ class PermissionSeeder extends Seeder
             ['name' => 'sales.delete', 'category_id' => optional($transactionCategory)->id],
             ['name' => 'sales.manage', 'category_id' => optional($transactionCategory)->id],
 
+            // POS Shortcuts (Admin only)
+            ['name' => 'pos.quick-add-product', 'category_id' => optional($transactionCategory)->id],
+            ['name' => 'pos.quick-adjust-stock', 'category_id' => optional($transactionCategory)->id],
+
             // Laporan & Analitik
             ['name' => 'reports.sales.view', 'category_id' => optional($reportCategory)->id],
             ['name' => 'reports.purchases.view', 'category_id' => optional($reportCategory)->id],
@@ -241,6 +245,7 @@ class PermissionSeeder extends Seeder
             'productions' => 'Data Produksi',
             'production-orders' => 'Antrian Pesanan',
             'sales' => 'Data Penjualan',
+            'pos' => 'POS Shortcut',
             'reports.sales' => 'Laporan Penjualan',
             'reports.purchases' => 'Laporan Pembelian',
             'reports.productions' => 'Laporan Produksi',
@@ -268,6 +273,8 @@ class PermissionSeeder extends Seeder
             'delete' => 'Hapus',
             'manage' => 'Kelola',
             'call' => 'Panggil',
+            'quick-add-product' => 'Quick Add Produk',
+            'quick-adjust-stock' => 'Quick Adjust Stok',
         ];
 
         $lastDotPosition = strrpos($slug, '.');

@@ -7,6 +7,7 @@ use App\Models\Divisions;
 use App\Models\Products;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -22,25 +23,43 @@ class ImportProducts extends Component
     use WithFileUploads;
 
     public $file;
+    public $imageFiles = [];
     public array $previewData = [];
     public int $validCount = 0;
     public int $errorCount = 0;
     public int $importedCount = 0;
     public bool $isLoading = false;
 
-    public string $filterSheet = 'all';
-    public string $filterCategory = 'all';
-    public string $filterDivision = 'all';
+    /** @var array Map of lowercase filename => temp path for uploaded images */
+    public array $uploadedImageMap = [];
 
     protected $rules = [
         'file' => 'required|file|mimes:xlsx,xls|max:5120',
+        'imageFiles.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
     ];
 
     protected $messages = [
-        'file.required' => 'File Excel wajib dipilih',
-        'file.mimes'    => 'File harus berformat .xlsx atau .xls',
-        'file.max'      => 'Ukuran file maksimal 5MB',
+        'file.required'       => 'File Excel wajib dipilih',
+        'file.mimes'          => 'File harus berformat .xlsx atau .xls',
+        'file.max'            => 'Ukuran file maksimal 5MB',
+        'imageFiles.*.image'  => 'File gambar harus berupa gambar',
+        'imageFiles.*.mimes'  => 'Gambar harus berformat jpg, jpeg, png, atau webp',
+        'imageFiles.*.max'    => 'Ukuran gambar maksimal 2MB per file',
     ];
+
+    /**
+     * Get validation reference data for Alpine.js client-side validation
+     */
+    private function getValidationRefs(): array
+    {
+        return [
+            'categoryMap'      => Categories::where('type', 'product')->pluck('id', 'name')->toArray(),
+            'divisionMap'      => Divisions::pluck('id', 'name')->toArray(),
+            'existingNames'    => Products::pluck('name')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray(),
+            'existingBarcodes' => Products::whereNotNull('barcode')->pluck('barcode')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray(),
+            'uploadedImages'   => array_keys($this->uploadedImageMap),
+        ];
+    }
 
     public function downloadTemplate()
     {
@@ -55,6 +74,7 @@ class ImportProducts extends Component
             $sheet->setCellValue('D1', 'Divisi');
             $sheet->setCellValue('E1', 'Harga');
             $sheet->setCellValue('F1', 'Status');
+            $sheet->setCellValue('G1', 'Gambar');
 
             $headerStyle = [
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
@@ -63,7 +83,7 @@ class ImportProducts extends Component
                     'startColor' => ['rgb' => '4F46E5'],
                 ],
             ];
-            $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
+            $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
 
             $sheet->setCellValue('A2', 'Roti Coklat');
             $sheet->setCellValue('B2', 'PRD0001');
@@ -71,10 +91,17 @@ class ImportProducts extends Component
             $sheet->setCellValue('D2', 'Pastry Bakery');
             $sheet->setCellValue('E2', '15000');
             $sheet->setCellValue('F2', 'active');
+            $sheet->setCellValue('G2', 'roti_coklat.jpg');
 
-            foreach (range('A', 'F') as $col) {
+            foreach (range('A', 'G') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
+
+            $sheet->setCellValue('G3', '(Isi nama file gambar yang di-upload bersama Excel)');
+            $noteStyle = [
+                'font' => ['italic' => true, 'color' => ['rgb' => '888888'], 'size' => 9],
+            ];
+            $sheet->getStyle('G3')->applyFromArray($noteStyle);
 
             $writer = new Xlsx($spreadsheet);
             $fileName = 'template_import_products.xlsx';
@@ -93,13 +120,27 @@ class ImportProducts extends Component
     {
         $this->validateOnly('file');
         $this->isLoading = true;
-
-        $this->reset(['previewData', 'validCount', 'errorCount', 'importedCount']);
-        $this->filterSheet = 'all';
-        $this->filterCategory = 'all';
-        $this->filterDivision = 'all';
-
+        $this->reset(['previewData', 'importedCount']);
         $this->previewAllSheets();
+    }
+
+    public function updatedImageFiles(): void
+    {
+        $this->validate([
+            'imageFiles.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $this->uploadedImageMap = [];
+        foreach ($this->imageFiles as $img) {
+            $originalName = mb_strtolower(trim($img->getClientOriginalName()));
+            $this->uploadedImageMap[$originalName] = $img->getRealPath();
+        }
+
+        $count = count($this->uploadedImageMap);
+        $this->dispatch('show-toast', type: 'success', message: "{$count} gambar berhasil di-upload");
+
+        // Notify Alpine about updated image list
+        $this->dispatch('images-updated', uploadedImages: array_keys($this->uploadedImageMap));
     }
 
     public function previewAllSheets(): void
@@ -114,10 +155,11 @@ class ImportProducts extends Component
             $path = $this->file->getRealPath();
             $spreadsheet = IOFactory::load($path);
 
-            $categories = Categories::where('type', 'product')->pluck('id', 'name')->toArray();
-            $divisions = Divisions::pluck('id', 'name')->toArray();
-            $existingNames = Products::pluck('name')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray();
-            $existingBarcodes = Products::whereNotNull('barcode')->pluck('barcode')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray();
+            $refs = $this->getValidationRefs();
+            $categories = $refs['categoryMap'];
+            $divisions = $refs['divisionMap'];
+            $existingNames = $refs['existingNames'];
+            $existingBarcodes = $refs['existingBarcodes'];
 
             $this->previewData = [];
 
@@ -137,6 +179,7 @@ class ImportProducts extends Component
                     $divisionName = isset($row[3]) ? trim((string) $row[3]) : '';
                     $priceRaw = isset($row[4]) ? trim((string) $row[4]) : '0';
                     $statusRaw = isset($row[5]) ? strtolower(trim((string) $row[5])) : 'active';
+                    $imageName = isset($row[6]) ? trim((string) $row[6]) : '';
                     $price = is_numeric($priceRaw) ? (float) $priceRaw : null;
 
                     $rowData = [
@@ -148,12 +191,14 @@ class ImportProducts extends Component
                         'division_name' => $divisionName,
                         'price'         => $price,
                         'status'        => in_array($statusRaw, ['active', 'inactive'], true) ? $statusRaw : 'active',
+                        'image_name'    => $imageName,
                         'category_id'   => null,
                         'division_id'   => null,
                         'errors'        => [],
                         'has_error'     => false,
                     ];
 
+                    // Server-side initial validation
                     if ($rowData['name'] === '') {
                         $rowData['errors'][] = 'Nama produk wajib diisi';
                     } elseif (in_array(mb_strtolower($rowData['name']), $existingNames, true)) {
@@ -184,13 +229,18 @@ class ImportProducts extends Component
                         $rowData['errors'][] = 'Harga harus angka >= 0';
                     }
 
-                    $rowData['has_error'] = !empty($rowData['errors']);
-                    if ($rowData['has_error']) {
-                        $this->errorCount++;
-                    } else {
-                        $this->validCount++;
+                    if ($rowData['image_name'] !== '') {
+                        $imgKey = mb_strtolower($rowData['image_name']);
+                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+                        $ext = pathinfo($imgKey, PATHINFO_EXTENSION);
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $rowData['errors'][] = 'Format gambar harus jpg, jpeg, png, atau webp';
+                        } elseif (!empty($this->uploadedImageMap) && !isset($this->uploadedImageMap[$imgKey])) {
+                            $rowData['errors'][] = 'File gambar "' . $rowData['image_name'] . '" tidak ditemukan di upload';
+                        }
                     }
 
+                    $rowData['has_error'] = !empty($rowData['errors']);
                     $this->previewData[] = $rowData;
                 }
             }
@@ -198,29 +248,34 @@ class ImportProducts extends Component
             if (count($this->previewData) === 0) {
                 $this->dispatch('show-toast', type: 'warning', message: 'Tidak ada data ditemukan di file ini');
             } else {
+                $errorCount = collect($this->previewData)->where('has_error', true)->count();
                 $msg = 'File berhasil diupload: ' . count($this->previewData) . ' data';
-                if ($this->errorCount > 0) {
-                    $msg .= ' (' . $this->errorCount . ' error)';
+                if ($errorCount > 0) {
+                    $msg .= " ({$errorCount} error)";
                 }
                 $this->dispatch('show-toast', type: 'success', message: $msg);
             }
+
+            // Dispatch to Alpine with rows + validation refs
+            $this->dispatch('preview-data-loaded',
+                rows: $this->previewData,
+                refs: $refs,
+            );
         } catch (\Exception $e) {
             Log::error('ImportProducts preview error: ' . $e->getMessage());
             $this->dispatch('show-toast', type: 'error', message: 'Error membaca file: ' . $e->getMessage());
-            $this->reset(['previewData', 'validCount', 'errorCount']);
+            $this->reset(['previewData']);
         } finally {
             $this->isLoading = false;
         }
     }
 
-    public function importData(): void
+    /**
+     * Receive edited rows from Alpine.js and import to database
+     */
+    public function importDataFromAlpine(array $rows): void
     {
-        if ($this->errorCount > 0) {
-            $this->dispatch('show-toast', type: 'error', message: 'Ada ' . $this->errorCount . ' data error. Perbaiki sebelum import.');
-            return;
-        }
-
-        if (empty($this->previewData)) {
+        if (empty($rows)) {
             $this->dispatch('show-toast', type: 'error', message: 'Tidak ada data untuk diimport');
             return;
         }
@@ -230,35 +285,62 @@ class ImportProducts extends Component
         try {
             DB::beginTransaction();
 
-            $imported = 0;
-            $errors = [];
+            // Fresh validation refs
+            $categories = Categories::where('type', 'product')->pluck('id', 'name')->toArray();
+            $divisions = Divisions::pluck('id', 'name')->toArray();
             $existingNames = Products::pluck('name')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray();
             $existingBarcodes = Products::whereNotNull('barcode')->pluck('barcode')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray();
 
-            foreach ($this->previewData as $row) {
-                if ($row['has_error']) {
+            $imported = 0;
+            $errors = [];
+
+            foreach ($rows as $row) {
+                $name = trim((string) ($row['name'] ?? ''));
+                $barcode = trim((string) ($row['barcode'] ?? ''));
+                $categoryName = trim((string) ($row['category_name'] ?? ''));
+                $divisionName = trim((string) ($row['division_name'] ?? ''));
+                $priceRaw = $row['price'] ?? null;
+                $status = ($row['status'] ?? 'active') === 'active';
+                $imageName = trim((string) ($row['image_name'] ?? ''));
+
+                $nameKey = mb_strtolower($name);
+                $barcodeKey = mb_strtolower($barcode);
+
+                // Server-side validation
+                if ($name === '' || !isset($categories[$categoryName]) || !isset($divisions[$divisionName])) {
                     continue;
                 }
-
-                $nameKey = mb_strtolower(trim((string) $row['name']));
-                $barcodeKey = mb_strtolower(trim((string) ($row['barcode'] ?? '')));
-
+                if ($priceRaw === null || !is_numeric($priceRaw) || (float) $priceRaw < 0) {
+                    continue;
+                }
                 if (in_array($nameKey, $existingNames, true)) {
                     continue;
                 }
-
                 if ($barcodeKey !== '' && in_array($barcodeKey, $existingBarcodes, true)) {
                     continue;
                 }
 
                 try {
+                    // Handle image upload
+                    $fotoPath = null;
+                    if ($imageName !== '' && !empty($this->imageFiles)) {
+                        $imgKey = mb_strtolower($imageName);
+                        foreach ($this->imageFiles as $img) {
+                            if (mb_strtolower(trim($img->getClientOriginalName())) === $imgKey) {
+                                $fotoPath = $img->store('products', 'public');
+                                break;
+                            }
+                        }
+                    }
+
                     $product = Products::create([
-                        'name'        => $row['name'],
-                        'barcode'     => $row['barcode'] !== '' ? $row['barcode'] : null,
-                        'category_id' => $row['category_id'],
-                        'division_id' => $row['division_id'],
-                        'price'       => $row['price'],
-                        'status'      => $row['status'] === 'active',
+                        'name'         => $name,
+                        'barcode'      => $barcode !== '' ? $barcode : null,
+                        'foto_product' => $fotoPath,
+                        'category_id'  => $categories[$categoryName],
+                        'division_id'  => $divisions[$divisionName],
+                        'price'        => (float) $priceRaw,
+                        'status'       => $status,
                     ]);
 
                     $product->stock()->create(['qty_available' => 0]);
@@ -269,7 +351,9 @@ class ImportProducts extends Component
                         $existingBarcodes[] = $barcodeKey;
                     }
                 } catch (\Exception $e) {
-                    $errors[] = 'Sheet ' . $row['sheet_name'] . ', Baris ' . $row['row_number'] . ': ' . $e->getMessage();
+                    $sheetName = $row['sheet_name'] ?? '?';
+                    $rowNum = $row['row_number'] ?? '?';
+                    $errors[] = "Sheet {$sheetName}, Baris {$rowNum}: " . $e->getMessage();
                 }
             }
 
@@ -277,12 +361,12 @@ class ImportProducts extends Component
                 DB::commit();
                 $this->importedCount = $imported;
 
-                $msg = 'Berhasil import ' . $imported . ' data produk!';
+                $msg = "Berhasil import {$imported} data produk!";
                 if (!empty($errors)) {
                     $msg .= ' (' . count($errors) . ' gagal)';
                 }
                 $this->dispatch('show-toast', type: 'success', message: $msg);
-                $this->reset(['file', 'previewData', 'validCount', 'errorCount']);
+                $this->reset(['file', 'imageFiles', 'previewData', 'uploadedImageMap']);
                 $this->dispatch('redirect-after-import');
             } else {
                 DB::rollBack();
@@ -299,167 +383,20 @@ class ImportProducts extends Component
 
     public function clearPreview(): void
     {
-        $this->reset(['file', 'previewData', 'validCount', 'errorCount', 'importedCount']);
-        $this->filterSheet = 'all';
-        $this->filterCategory = 'all';
-        $this->filterDivision = 'all';
+        $this->reset(['file', 'imageFiles', 'previewData', 'importedCount', 'uploadedImageMap']);
         $this->dispatch('show-toast', type: 'info', message: 'Data dibersihkan');
-    }
-
-    public function setFilterSheet(string $sheet): void
-    {
-        $this->filterSheet = $sheet;
-    }
-
-    public function updatedPreviewData($value, $key): void
-    {
-        [$index, $field] = array_pad(explode('.', (string) $key, 2), 2, null);
-        if ($field === null || !isset($this->previewData[(int) $index])) {
-            return;
-        }
-
-        $rowIndex = (int) $index;
-
-        if (in_array($field, ['name', 'barcode', 'category_name', 'division_name', 'status'], true)) {
-            $this->previewData[$rowIndex][$field] = trim((string) $this->previewData[$rowIndex][$field]);
-        }
-
-        if ($field === 'price') {
-            $raw = (string) $this->previewData[$rowIndex]['price'];
-            $raw = str_replace(',', '.', trim($raw));
-            $this->previewData[$rowIndex]['price'] = is_numeric($raw) ? (float) $raw : null;
-        }
-
-        if ($field === 'status') {
-            $status = strtolower((string) $this->previewData[$rowIndex]['status']);
-            $this->previewData[$rowIndex]['status'] = in_array($status, ['active', 'inactive'], true) ? $status : 'active';
-        }
-
-        $this->revalidatePreviewRow($rowIndex);
-        $this->recalculatePreviewCounts();
-    }
-
-    private function revalidatePreviewRow(int $index): void
-    {
-        if (!isset($this->previewData[$index])) {
-            return;
-        }
-
-        $categories = Categories::where('type', 'product')->pluck('id', 'name')->toArray();
-        $divisions = Divisions::pluck('id', 'name')->toArray();
-        $existingNames = Products::pluck('name')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray();
-        $existingBarcodes = Products::whereNotNull('barcode')->pluck('barcode')->map(fn($v) => mb_strtolower(trim((string) $v)))->toArray();
-
-        $row = $this->previewData[$index];
-        $errors = [];
-        $categoryId = null;
-        $divisionId = null;
-
-        $name = trim((string) ($row['name'] ?? ''));
-        $barcode = trim((string) ($row['barcode'] ?? ''));
-        $categoryName = trim((string) ($row['category_name'] ?? ''));
-        $divisionName = trim((string) ($row['division_name'] ?? ''));
-        $price = $row['price'];
-
-        if ($name === '') {
-            $errors[] = 'Nama produk wajib diisi';
-        } elseif (in_array(mb_strtolower($name), $existingNames, true)) {
-            $errors[] = 'Nama produk sudah terdaftar';
-        }
-
-        if ($barcode !== '' && in_array(mb_strtolower($barcode), $existingBarcodes, true)) {
-            $errors[] = 'Barcode sudah terdaftar';
-        }
-
-        if ($categoryName === '') {
-            $errors[] = 'Kategori wajib diisi';
-        } elseif (!isset($categories[$categoryName])) {
-            $errors[] = 'Kategori produk tidak ditemukan';
-        } else {
-            $categoryId = $categories[$categoryName];
-        }
-
-        if ($divisionName === '') {
-            $errors[] = 'Divisi wajib diisi';
-        } elseif (!isset($divisions[$divisionName])) {
-            $errors[] = 'Divisi tidak ditemukan';
-        } else {
-            $divisionId = $divisions[$divisionName];
-        }
-
-        if ($price === null || !is_numeric($price) || (float) $price < 0) {
-            $errors[] = 'Harga harus angka >= 0';
-        }
-
-        $this->previewData[$index]['name'] = $name;
-        $this->previewData[$index]['barcode'] = $barcode;
-        $this->previewData[$index]['category_name'] = $categoryName;
-        $this->previewData[$index]['division_name'] = $divisionName;
-        $this->previewData[$index]['category_id'] = $categoryId;
-        $this->previewData[$index]['division_id'] = $divisionId;
-        $this->previewData[$index]['errors'] = $errors;
-        $this->previewData[$index]['has_error'] = !empty($errors);
-    }
-
-    private function recalculatePreviewCounts(): void
-    {
-        $this->errorCount = collect($this->previewData)->where('has_error', true)->count();
-        $this->validCount = collect($this->previewData)->where('has_error', false)->count();
-    }
-
-    public function getFilteredPreviewDataProperty(): array
-    {
-        return collect($this->previewData)
-            ->map(function ($row, $index) {
-                $row['_index'] = $index;
-                return $row;
-            })
-            ->when($this->filterSheet !== 'all', fn($c) => $c->where('sheet_name', $this->filterSheet))
-            ->when($this->filterCategory !== 'all', fn($c) => $c->where('category_name', $this->filterCategory))
-            ->when($this->filterDivision !== 'all', fn($c) => $c->where('division_name', $this->filterDivision))
-            ->values()
-            ->all();
-    }
-
-    public function getAvailableSheetsProperty(): array
-    {
-        return collect($this->previewData)
-            ->pluck('sheet_name')
-            ->unique()
-            ->filter()
-            ->values()
-            ->all();
-    }
-
-    public function getAvailableCategoriesProperty(): array
-    {
-        return collect($this->previewData)
-            ->pluck('category_name')
-            ->unique()
-            ->filter()
-            ->sort()
-            ->values()
-            ->all();
-    }
-
-    public function getAvailableDivisionsProperty(): array
-    {
-        return collect($this->previewData)
-            ->pluck('division_name')
-            ->unique()
-            ->filter()
-            ->sort()
-            ->values()
-            ->all();
     }
 
     public function render()
     {
+        $refs = $this->getValidationRefs();
+
         return view('livewire.admin.products.import-products', [
-            'filteredPreviewData' => $this->filteredPreviewData,
-            'availableSheets' => $this->availableSheets,
-            'availableCategories' => $this->availableCategories,
-            'availableDivisions' => $this->availableDivisions,
+            'categoryMap'      => $refs['categoryMap'],
+            'divisionMap'      => $refs['divisionMap'],
+            'existingNames'    => $refs['existingNames'],
+            'existingBarcodes' => $refs['existingBarcodes'],
+            'uploadedImages'   => $refs['uploadedImages'],
         ]);
     }
 }

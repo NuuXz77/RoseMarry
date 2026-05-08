@@ -45,34 +45,36 @@
         </div>
 
         {{-- Dibayar --}}
-        <div class="card bg-base-100 border border-base-300">
-            <div class="card-body p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
-                        <x-heroicon-s-check-circle class="w-5 h-5 text-success" />
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold">Dibayar</p>
-                        <p class="text-lg font-black text-success truncate">Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</p>
+        @if ($sale->status !== 'unpaid')
+            <div class="card bg-base-100 border border-base-300">
+                <div class="card-body p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+                            <x-heroicon-s-check-circle class="w-5 h-5 text-success" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold">Dibayar</p>
+                            <p class="text-lg font-black text-success truncate">Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Kembalian --}}
-        <div class="card bg-base-100 border border-base-300">
-            <div class="card-body p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center shrink-0">
-                        <x-heroicon-s-arrow-path class="w-5 h-5 text-info" />
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold">Kembalian</p>
-                        <p class="text-lg font-black truncate">Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</p>
+            {{-- Kembalian --}}
+            <div class="card bg-base-100 border border-base-300">
+                <div class="card-body p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center shrink-0">
+                            <x-heroicon-s-arrow-path class="w-5 h-5 text-info" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold">Kembalian</p>
+                            <p class="text-lg font-black truncate">Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         {{-- Status Pembayaran --}}
         <div class="card bg-base-100 border border-base-300">
@@ -108,9 +110,9 @@
                     @php
                         $prodConfig = match($sale->production_status) {
                             'cooking'   => ['bg' => 'bg-info/10', 'text' => 'text-info', 'badge' => 'badge-info'],
-                            'done'      => ['bg' => 'bg-success/10', 'text' => 'text-success', 'badge' => 'badge-success'],
+                            'done'      => ['bg' => 'bg-info/10', 'text' => 'text-info', 'badge' => 'badge-info'],
                             'delivered' => ['bg' => 'bg-primary/10', 'text' => 'text-primary', 'badge' => 'badge-primary'],
-                            'completed' => ['bg' => 'bg-base-200', 'text' => 'text-base-content/60', 'badge' => 'badge-neutral'],
+                            'completed' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'badge' => 'badge-success'],
                             default     => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'badge' => 'badge-warning'],
                         };
                     @endphp
@@ -167,10 +169,12 @@
                             <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold mb-0.5">Shift</p>
                             <p class="font-medium text-sm">{{ $sale->shift?->name ?? '-' }}</p>
                         </div>
+                        @if ($sale->status !== 'unpaid')
                         <div>
                             <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold mb-0.5">Metode Bayar</p>
                             <span class="badge badge-sm badge-outline font-semibold uppercase">{{ $sale->payment_method }}</span>
                         </div>
+                        @endif
                         <div>
                             <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold mb-0.5">Identitas</p>
                             <p class="font-medium text-sm">{{ $sale->service_identity }}</p>
@@ -297,16 +301,18 @@
                             <span>TOTAL</span>
                             <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
                         </div>
-                        <div class="divider my-1"></div>
-                        <div class="flex justify-between text-base-content/60">
-                            <span>Dibayar</span>
-                            <span class="font-bold text-base-content">Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
-                        </div>
-                        @if($sale->change_amount > 0)
-                            <div class="flex justify-between text-success">
-                                <span>Kembalian</span>
-                                <span class="font-bold">Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                        @if ($sale->status !== 'unpaid')
+                            <div class="divider my-1"></div>
+                            <div class="flex justify-between text-base-content/60">
+                                <span>Dibayar</span>
+                                <span class="font-bold text-base-content">Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
                             </div>
+                            @if($sale->change_amount > 0)
+                                <div class="flex justify-between text-success">
+                                    <span>Kembalian</span>
+                                    <span class="font-bold">Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -322,58 +328,142 @@
                         </h2>
                     </div>
                     <div class="p-6 flex flex-col items-center">
-                        <div id="thermal-receipt" class="bg-white text-black p-4 w-full max-w-[300px] font-mono text-[12px] border shadow-inner rounded">
-                            <div class="text-center font-bold text-lg uppercase mb-1">{{ $appName }}</div>
-                            <div class="text-center text-[10px] mb-2 border-b border-dashed border-black pb-2">
-                                Terima kasih atas pembelian Anda
+                        <div id="thermal-receipt" class="bg-white text-black p-4 sm:p-5 w-full max-w-[350px] font-mono text-[12px] border shadow-inner rounded">
+
+                            {{-- Header --}}
+                            <div class="text-center border-b border-dashed border-black pb-3 mb-3">
+                                @if($appLogo)
+                                    <img src="{{ asset($appLogo) }}" alt="{{ $appName }}"
+                                        class="h-10 mx-auto mb-1.5 object-contain" />
+                                @endif
+                                <h2 class="text-base font-bold uppercase tracking-wide">{{ $appName }}</h2>
+                                @if($appAddress)
+                                    <p class="text-[10px] mt-1 leading-tight">{{ $appAddress }}</p>
+                                @endif
+                                @if($appTagline)
+                                    <p class="text-[10px] mt-1 opacity-60">{{ $appTagline }}</p>
+                                @endif
                             </div>
 
-                            <div class="flex justify-between mb-1">
-                                <span>Invoice:</span>
-                                <span>{{ $sale->invoice_number }}</span>
-                            </div>
-                            <div class="flex justify-between mb-1 text-[10px]">
-                                <span>Waktu:</span>
-                                <span>{{ $sale->created_at->format('d/m/y H:i') }}</span>
-                            </div>
-
-                            <div class="border-b border-dashed border-black my-2"></div>
-
-                            <div class="space-y-1 mb-2">
-                                @foreach($sale->items as $item)
-                                <div>
-                                    <div class="uppercase text-[10px]">{{ $item->product?->name ?? '-' }}</div>
-                                    <div class="flex justify-between">
-                                        <span>{{ $item->qty }} x {{ number_format($item->price, 0, ',', '.') }}</span>
-                                        <span>{{ number_format($item->subtotal, 0, ',', '.') }}</span>
-                                    </div>
+                            {{-- Invoice Info --}}
+                            <div class="space-y-1 mb-3 text-[11px]">
+                                <div class="flex justify-between gap-3">
+                                    <span>Invoice:</span>
+                                    <span class="text-right">{{ $sale->invoice_number }}</span>
                                 </div>
-                                @endforeach
+                                <div class="flex justify-between gap-3">
+                                    <span>Waktu:</span>
+                                    <span class="text-right">{{ $sale->created_at->format('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="flex justify-between gap-3">
+                                    <span>Kasir:</span>
+                                    <span class="text-right">{{ $sale->cashier?->name ?? '-' }}</span>
+                                </div>
+                                <div class="flex justify-between gap-3">
+                                    <span>Layanan:</span>
+                                    <span class="text-right">{{ $sale->status_order ?? 'Take away' }}</span>
+                                </div>
+                                <div class="flex justify-between gap-3">
+                                    <span>Pelanggan:</span>
+                                    <span class="text-right">{{ $sale->service_identity }}</span>
+                                </div>
+                                @if ($sale->status_order === 'Dine in' && $sale->table_number)
+                                    <div class="flex justify-between gap-3">
+                                        <span>Meja:</span>
+                                        <span class="text-right">{{ $sale->table_number }}</span>
+                                    </div>
+                                @endif
                             </div>
 
-                            <div class="border-b border-dashed border-black my-2"></div>
+                            {{-- Divider --}}
+                            <div class="border-t border-dashed border-black mb-3"></div>
 
-                            <div class="space-y-1">
-                                <div class="flex justify-between font-bold">
-                                    <span>TOTAL:</span>
+                            {{-- Item List --}}
+                            <div class="overflow-x-auto -mx-1 sm:mx-0">
+                                <table class="w-full text-[11px] mb-3">
+                                    <thead>
+                                        <tr class="text-[10px] uppercase tracking-wide border-b border-dashed border-black">
+                                            <th class="text-left pb-1.5 font-bold">Produk</th>
+                                            <th class="text-center pb-1.5 font-bold w-10">Qty</th>
+                                            <th class="text-right pb-1.5 font-bold w-20">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($sale->items as $item)
+                                            <tr>
+                                                <td class="py-1 pr-2 uppercase" style="word-break:break-word;">
+                                                    {{ $item->product?->name ?? 'Produk dihapus' }}
+                                                </td>
+                                                <td class="py-1 text-center">{{ $item->qty }}</td>
+                                                <td class="py-1 text-right font-bold whitespace-nowrap">
+                                                    Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{-- Divider --}}
+                            <div class="border-t border-dashed border-black mb-3"></div>
+
+                            {{-- Totals --}}
+                            <div class="space-y-1 text-[11px]">
+                                <div class="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span>Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</span>
+                                </div>
+                                @if ($sale->discount_amount > 0)
+                                    <div class="flex justify-between">
+                                        <span>Diskon</span>
+                                        <span>− Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+                                <div class="border-t border-dashed border-black my-2"></div>
+                                <div class="flex justify-between font-bold text-[13px]">
+                                    <span>TOTAL</span>
                                     <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="flex justify-between text-[10px]">
-                                    <span>Bayar:</span>
-                                    <span>{{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between text-[10px]">
-                                    <span>Kembali:</span>
-                                    <span>{{ number_format($sale->change_amount, 0, ',', '.') }}</span>
-                                </div>
-                                <div class="flex justify-between text-[10px]">
-                                    <span>Status:</span>
-                                    <span class="font-bold uppercase">{{ $sale->status === 'paid' ? 'LUNAS' : ($sale->status === 'unpaid' ? 'HUTANG' : 'BATAL') }}</span>
+                            </div>
+
+                            {{-- Divider --}}
+                            <div class="border-t border-dashed border-black my-3"></div>
+
+                            {{-- Payment Info --}}
+                            <div class="space-y-1 text-[11px]">
+                                @if ($sale->status !== 'unpaid')
+                                    <div class="flex justify-between">
+                                        <span>Metode</span>
+                                        <span class="uppercase">{{ $sale->payment_method }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Dibayar</span>
+                                        <span>Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
+                                    </div>
+                                    @if ($sale->change_amount > 0)
+                                        <div class="flex justify-between">
+                                            <span>Kembalian</span>
+                                            <span>Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                                        </div>
+                                    @endif
+                                @endif
+                                <div class="flex justify-between">
+                                    <span>Status</span>
+                                    <span
+                                        class="uppercase font-bold">{{ $sale->status === 'paid' ? 'LUNAS' : ($sale->status === 'unpaid' ? 'HUTANG' : 'BATAL') }}</span>
                                 </div>
                             </div>
+
+                            {{-- Footer --}}
+                            <div class="border-t border-dashed border-black mt-4 pt-3 text-center">
+                                <p class="text-[10px]">Terima kasih telah berbelanja di <span
+                                        class="font-bold">{{ $appName }}</span></p>
+                                <p class="text-[10px] mt-1">{{ $sale->created_at->format('d/m/Y H:i:s') }}</p>
+                            </div>
+
                         </div>
 
-                        <button type="button" class="btn btn-primary btn-sm gap-2 mt-4 w-full max-w-[300px]" onclick="printReceipt()">
+                        <button type="button" class="btn btn-primary btn-sm gap-2 mt-4 w-full max-w-[350px]" onclick="printReceipt()">
                             <x-heroicon-o-printer class="w-4 h-4" />
                             Cetak Struk
                         </button>

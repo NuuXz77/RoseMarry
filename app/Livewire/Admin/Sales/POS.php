@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\On;
 
 #[Layout('components.layouts.app')]
 class POS extends Component
@@ -111,6 +112,16 @@ class POS extends Component
     public function mount()
     {
         $this->shift_id = $this->resolveShiftId();
+    }
+
+    /**
+     * Re-render the product grid when a product is created or stock adjusted
+     * via the admin POS shortcut modals.
+     */
+    #[On('product-changed')]
+    public function refreshProducts(): void
+    {
+        // Livewire auto re-renders on event handler calls — no explicit logic needed.
     }
 
     public function updatedPaidAmount()

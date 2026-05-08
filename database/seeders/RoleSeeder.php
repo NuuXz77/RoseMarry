@@ -31,8 +31,22 @@ class RoleSeeder extends Seeder
                 'productions.view',
                 'production-orders.view',
                 'production-orders.manage',
+
                 'products.view',
+                'products.create',
+                'products.edit',
+                'products.delete',
+                'products.manage',
+
                 'product-stocks.view',
+                'product-stocks.create',
+                'product-stocks.edit',
+                'product-stocks.delete',
+                'product-stocks.manage',
+
+                'product-stock-logs.view',
+                'product-stock-logs.manage',
+                
                 'product-materials.view',
                 'product-wastes.view',
                 'student-group-attendances.view',
@@ -155,13 +169,21 @@ class RoleSeeder extends Seeder
             }
         }
 
-        // Explicitly lock stock adjustment permission to Admin only
-        $adminOnlyPermission = 'product-stocks.adjust';
+        // Explicitly lock admin-only permissions
+        $adminOnlyPermissions = [
+            'product-stocks.adjust',
+            'pos.quick-add-product',
+            'pos.quick-adjust-stock',
+        ];
         foreach (['Production', 'Inventory', 'Cashier'] as $roleName) {
             /** @var Role|null $role */
             $role = Role::where('name', $roleName)->first();
-            if ($role && $role->hasPermissionTo($adminOnlyPermission)) {
-                $role->revokePermissionTo($adminOnlyPermission);
+            if ($role) {
+                foreach ($adminOnlyPermissions as $adminPerm) {
+                    if ($role->hasPermissionTo($adminPerm)) {
+                        $role->revokePermissionTo($adminPerm);
+                    }
+                }
             }
         }
     }

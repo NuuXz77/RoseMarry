@@ -8,66 +8,139 @@
 
         @if($sale)
         <div class="flex flex-col items-center">
-            <div id="thermal-receipt" class="bg-white text-black p-4 w-full font-mono text-[12px] border shadow-inner">
-                <div class="text-center font-bold text-lg uppercase mb-1">Rosemary POS</div>
-                <div class="text-center text-[10px] mb-2 border-b border-dashed border-black pb-2">
-                    Jl. Kebangkitan Maju No. 88<br>
-                    Telp: 0812-3456-7890
+            <div id="thermal-receipt" class="bg-white text-black p-4 sm:p-5 w-full font-mono text-[12px] border shadow-inner">
+
+                {{-- Header --}}
+                <div class="text-center border-b border-dashed border-black pb-3 mb-3">
+                    @if($appLogo)
+                        <img src="{{ asset($appLogo) }}" alt="{{ $appName }}"
+                            class="h-10 mx-auto mb-1.5 object-contain" />
+                    @endif
+                    <h2 class="text-base font-bold uppercase tracking-wide">{{ $appName }}</h2>
+                    @if($appAddress)
+                        <p class="text-[10px] mt-1 leading-tight">{{ $appAddress }}</p>
+                    @endif
+                    @if($appTagline)
+                        <p class="text-[10px] mt-1 opacity-60">{{ $appTagline }}</p>
+                    @endif
                 </div>
-                
-                <div class="flex justify-between mb-1">
-                    <span>Invoice:</span>
-                    <span>{{ $sale->invoice_number }}</span>
-                </div>
-                <div class="flex justify-between mb-1 text-[10px]">
-                    <span>Waktu:</span>
-                    <span>{{ $sale->created_at->format('d/m/y H:i') }}</span>
-                </div>
-                <div class="flex justify-between mb-1 text-[10px]">
-                    <span>Order:</span>
-                    <span>{{ $sale->status_order ?? 'Take away' }}</span>
-                </div>
-                <div class="flex justify-between mb-1 text-[10px]">
-                    <span>Identitas:</span>
-                    <span>{{ $sale->service_identity }}</span>
-                </div>
-                @if(($sale->status_order ?? 'Take away') === 'Dine in' && $sale->table_number)
-                <div class="flex justify-between mb-1 text-[10px]">
-                    <span>Meja:</span>
-                    <span>{{ $sale->table_number }}</span>
-                </div>
-                @endif
-                
-                <div class="border-b border-dashed border-black my-2"></div>
-                
-                <div class="space-y-1 mb-2">
-                    @foreach($sale->items as $item)
-                    <div>
-                        <div class="uppercase text-[10px]">{{ $item->product->name }}</div>
-                        <div class="flex justify-between">
-                            <span>{{ $item->qty }} x {{ number_format($item->price, 0, ',', '.') }}</span>
-                            <span>{{ number_format($item->subtotal, 0, ',', '.') }}</span>
-                        </div>
+
+                {{-- Invoice Info --}}
+                <div class="space-y-1 mb-3 text-[11px]">
+                    <div class="flex justify-between gap-3">
+                        <span>Invoice:</span>
+                        <span class="text-right">{{ $sale->invoice_number }}</span>
                     </div>
-                    @endforeach
+                    <div class="flex justify-between gap-3">
+                        <span>Waktu:</span>
+                        <span class="text-right">{{ $sale->created_at->format('d/m/Y H:i') }}</span>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <span>Kasir:</span>
+                        <span class="text-right">{{ $sale->cashier?->name ?? '-' }}</span>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <span>Layanan:</span>
+                        <span class="text-right">{{ $sale->status_order ?? 'Take away' }}</span>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <span>Pelanggan:</span>
+                        <span class="text-right">{{ $sale->service_identity }}</span>
+                    </div>
+                    @if ($sale->status_order === 'Dine in' && $sale->table_number)
+                        <div class="flex justify-between gap-3">
+                            <span>Meja:</span>
+                            <span class="text-right">{{ $sale->table_number }}</span>
+                        </div>
+                    @endif
                 </div>
-                
-                <div class="border-b border-dashed border-black my-2"></div>
-                
-                <div class="space-y-1">
-                    <div class="flex justify-between font-bold">
-                        <span>TOTAL:</span>
+
+                {{-- Divider --}}
+                <div class="border-t border-dashed border-black mb-3"></div>
+
+                {{-- Item List --}}
+                <div class="overflow-x-auto -mx-1 sm:mx-0">
+                    <table class="w-full text-[11px] mb-3">
+                        <thead>
+                            <tr class="text-[10px] uppercase tracking-wide border-b border-dashed border-black">
+                                <th class="text-left pb-1.5 font-bold">Produk</th>
+                                <th class="text-center pb-1.5 font-bold w-10">Qty</th>
+                                <th class="text-right pb-1.5 font-bold w-20">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($sale->items as $item)
+                                <tr>
+                                    <td class="py-1 pr-2 uppercase" style="word-break:break-word;">
+                                        {{ $item->product?->name ?? 'Produk dihapus' }}
+                                    </td>
+                                    <td class="py-1 text-center">{{ $item->qty }}</td>
+                                    <td class="py-1 text-right font-bold whitespace-nowrap">
+                                        Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Divider --}}
+                <div class="border-t border-dashed border-black mb-3"></div>
+
+                {{-- Totals --}}
+                <div class="space-y-1 text-[11px]">
+                    <div class="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</span>
+                    </div>
+                    @if ($sale->discount_amount > 0)
+                        <div class="flex justify-between">
+                            <span>Diskon</span>
+                            <span>− Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</span>
+                        </div>
+                    @endif
+                    <div class="border-t border-dashed border-black my-2"></div>
+                    <div class="flex justify-between font-bold text-[13px]">
+                        <span>TOTAL</span>
                         <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex justify-between text-[10px]">
-                        <span>Bayar:</span>
-                        <span>{{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="flex justify-between text-[10px]">
-                        <span>Kembali:</span>
-                        <span>{{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                </div>
+
+                {{-- Divider --}}
+                <div class="border-t border-dashed border-black my-3"></div>
+
+                {{-- Payment Info --}}
+                <div class="space-y-1 text-[11px]">
+                    @if ($sale->status !== 'unpaid')
+                        <div class="flex justify-between">
+                            <span>Metode</span>
+                            <span class="uppercase">{{ $sale->payment_method }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Dibayar</span>
+                            <span>Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
+                        </div>
+                        @if ($sale->change_amount > 0)
+                            <div class="flex justify-between">
+                                <span>Kembalian</span>
+                                <span>Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
+                    @endif
+                    <div class="flex justify-between">
+                        <span>Status</span>
+                        <span
+                            class="uppercase font-bold">{{ $sale->status === 'paid' ? 'LUNAS' : ($sale->status === 'unpaid' ? 'HUTANG' : 'BATAL') }}</span>
                     </div>
                 </div>
+
+                {{-- Footer --}}
+                <div class="border-t border-dashed border-black mt-4 pt-3 text-center">
+                    <p class="text-[10px]">Terima kasih telah berbelanja di <span
+                            class="font-bold">{{ $appName }}</span></p>
+                    <p class="text-[10px] mt-1">{{ $sale->created_at->format('d/m/Y H:i:s') }}</p>
+                </div>
+
             </div>
 
             <div class="modal-action w-full flex justify-center gap-2 mt-6">

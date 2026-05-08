@@ -247,19 +247,21 @@
 
                     {{-- Payment Info --}}
                     <div class="space-y-1 text-[11px]">
-                        <div class="flex justify-between">
-                            <span>Metode</span>
-                            <span class="uppercase">{{ $sale->payment_method }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Dibayar</span>
-                            <span>Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
-                        </div>
-                        @if ($sale->change_amount > 0)
+                        @if ($sale->status !== 'unpaid')
                             <div class="flex justify-between">
-                                <span>Kembalian</span>
-                                <span>Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                                <span>Metode</span>
+                                <span class="uppercase">{{ $sale->payment_method }}</span>
                             </div>
+                            <div class="flex justify-between">
+                                <span>Dibayar</span>
+                                <span>Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
+                            </div>
+                            @if ($sale->change_amount > 0)
+                                <div class="flex justify-between">
+                                    <span>Kembalian</span>
+                                    <span>Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         @endif
                         <div class="flex justify-between">
                             <span>Status</span>
@@ -371,15 +373,17 @@
                             <span>Total</span>
                             <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-base-content/60">Dibayar</span>
-                            <span class="font-bold">Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
-                        </div>
-                        @if($sale->change_amount > 0)
-                            <div class="flex justify-between text-success">
-                                <span>Kembalian</span>
-                                <span class="font-bold">Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                        @if ($sale->status !== 'unpaid')
+                            <div class="flex justify-between">
+                                <span class="text-base-content/60">Dibayar</span>
+                                <span class="font-bold">Rp {{ number_format($sale->paid_amount, 0, ',', '.') }}</span>
                             </div>
+                            @if($sale->change_amount > 0)
+                                <div class="flex justify-between text-success">
+                                    <span>Kembalian</span>
+                                    <span class="font-bold">Rp {{ number_format($sale->change_amount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         @endif
                     </div>
                 </div>
