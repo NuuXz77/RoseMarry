@@ -29,7 +29,8 @@ class Checkout extends Component
     public string $payment_status   = 'paid';
     public float $paid_amount       = 0;
     public float $change_amount     = 0;
-    public string $note             = '';
+    public string $catatan          = '';
+    public bool $skip_production    = false;
     public string $guest_name       = '';
     public string $status_order     = Sales::ORDER_STATUS_TAKE_AWAY;
     public string $table_number     = '';
@@ -248,6 +249,8 @@ class Checkout extends Component
                 'change_amount'      => $this->change_amount,
                 'payment_method'     => $this->payment_method,
                 'status'             => $this->payment_status,
+                'catatan'            => $this->catatan ?: null,
+                'production_status'  => $this->skip_production ? Sales::PRODUCTION_STATUS_COMPLETED : Sales::PRODUCTION_STATUS_PENDING,
             ];
 
             if ($hasQueueNumberColumn) {

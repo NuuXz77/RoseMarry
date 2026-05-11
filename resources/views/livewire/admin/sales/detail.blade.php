@@ -185,6 +185,12 @@
                             <p class="font-medium text-sm">{{ $sale->table_number }}</p>
                         </div>
                         @endif
+                        @if($sale->catatan)
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-base-content/40 font-semibold mb-0.5">Catatan</p>
+                            <p class="font-medium text-sm text-warning">{{ $sale->catatan }}</p>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -371,6 +377,12 @@
                                     <div class="flex justify-between gap-3">
                                         <span>Meja:</span>
                                         <span class="text-right">{{ $sale->table_number }}</span>
+                                    </div>
+                                @endif
+                                @if ($sale->catatan)
+                                    <div class="flex justify-between gap-3">
+                                        <span>Catatan:</span>
+                                        <span class="text-right">{{ $sale->catatan }}</span>
                                     </div>
                                 @endif
                             </div>

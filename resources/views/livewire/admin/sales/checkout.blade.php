@@ -139,6 +139,27 @@
                                 </div>
                             </div>
                         @endif
+
+                        {{-- Catatan --}}
+                        <div class="mt-2">
+                            <x-form.input 
+                                name="catatan"
+                                wireModel="catatan"
+                                placeholder="Tambahkan catatan (opsional)..."
+                                icon="heroicon-s-pencil-square"
+                                size="input-sm"
+                            />
+                        </div>
+
+                        {{-- Lewati Produksi --}}
+                        <div class="mt-2 px-4 py-1 rounded-xl bg-base-200/60 border border-base-300">
+                            <x-form.checkbox 
+                                name="skip_production"
+                                wireModel="skip_production"
+                                label="Lewati Produksi (Langsung Selesai)"
+                                color="checkbox-success"
+                            />
+                        </div>
                     </div>
                 </div>
 

@@ -84,7 +84,8 @@
                             <x-form.select
                                 label="Status"
                                 name="filterStatus"
-                                wire:model.live="filterStatus"
+                                wireModel="filterStatus"
+                                wireModelModifier="live"
                                 placeholder="Semua Status"
                                 class="select-sm"
                             >
@@ -98,7 +99,8 @@
                             <x-form.select
                                 label="Layanan"
                                 name="filterService"
-                                wire:model.live="filterService"
+                                wireModel="filterService"
+                                wireModelModifier="live"
                                 placeholder="Semua Layanan"
                                 class="select-sm"
                             >
@@ -112,86 +114,77 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="table table-zebra table-sm">
-                    <thead>
-                        <tr>
-                            <th>Invoice</th>
-                            <th>Waktu</th>
-                            <th>Layanan</th>
-                            <th>Identitas</th>
-                            <th>Status Production</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($orders as $order)
-                            @php
-                                $prodActions = [];
+            @php
+                $columns = [
+                    ['label' => 'Invoice', 'field' => 'invoice_number'],
+                    ['label' => 'Waktu', 'field' => 'created_at'],
+                    ['label' => 'Layanan', 'field' => 'status_order'],
+                    ['label' => 'Identitas', 'field' => 'service_identity'],
+                    ['label' => 'Status Production', 'field' => 'production_status'],
+                    ['label' => 'Aksi', 'class' => 'text-center'],
+                ];
+            @endphp
 
-                                if ($canManage && $order->production_status === 'pending') {
-                                    $prodActions[] = ['method' => 'setCooking', 'label' => 'Proses Pesanan', 'icon' => 'heroicon-o-fire', 'class' => 'text-info'];
-                                }
-                                if ($canManage && $order->production_status === 'cooking') {
-                                    $prodActions[] = ['method' => 'setDone', 'label' => 'Selesai Masak', 'icon' => 'heroicon-o-check-circle', 'class' => 'text-success'];
-                                }
-                                if ($canManage && $order->production_status === 'done') {
-                                    $prodActions[] = ['method' => 'setDelivered', 'label' => 'Sudah Diantar', 'icon' => 'heroicon-o-truck', 'class' => 'text-primary'];
-                                }
-                                if ($order->production_status === 'delivered') {
-                                    $prodActions[] = ['method' => 'setCompleted', 'label' => 'Pesanan Selesai', 'icon' => 'heroicon-o-check-badge', 'class' => 'text-neutral'];
-                                }
+            <x-partials.table :columns="$columns" :data="$orders" emptyMessage="Belum ada pesanan yang masuk.">
+                @foreach($orders as $order)
+                    @php
+                        $prodActions = [];
+
+                        if ($canManage && $order->production_status === 'pending') {
+                            $prodActions[] = ['method' => 'setCooking', 'label' => 'Proses Pesanan', 'icon' => 'heroicon-o-fire', 'class' => 'text-info'];
+                        }
+                        if ($canManage && $order->production_status === 'cooking') {
+                            $prodActions[] = ['method' => 'setDone', 'label' => 'Selesai Masak', 'icon' => 'heroicon-o-check-circle', 'class' => 'text-success'];
+                        }
+                        if ($canManage && $order->production_status === 'done') {
+                            $prodActions[] = ['method' => 'setDelivered', 'label' => 'Sudah Diantar', 'icon' => 'heroicon-o-truck', 'class' => 'text-primary'];
+                        }
+                        if ($order->production_status === 'delivered') {
+                            $prodActions[] = ['method' => 'setCompleted', 'label' => 'Pesanan Selesai', 'icon' => 'heroicon-o-check-badge', 'class' => 'text-neutral'];
+                        }
+                    @endphp
+                    <tr wire:key="prod-order-{{ $order->id }}">
+                        <td class="font-semibold">{{ $order->invoice_number }}</td>
+                        <td class="text-xs">{{ $order->created_at?->format('d/m/Y H:i') }}</td>
+                        <td>
+                            <span class="badge badge-soft {{ $order->status_order === 'Take away' ? 'badge-warning' : 'badge-info' }}">
+                                {{ $order->status_order }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-sm">{{ $order->service_identity }}</div>
+                            @if($order->status_order === 'Dine in' && $order->table_number)
+                                <div class="text-xs text-base-content/60">Meja: {{ $order->table_number }}</div>
+                            @endif
+                        </td>
+                        <td>
+                            @php
+                                $statusBadge = match($order->production_status) {
+                                    'cooking' => 'badge-info',
+                                    'done' => 'badge-success',
+                                    'delivered' => 'badge-primary',
+                                    'completed' => 'badge-primary',
+                                    default => 'badge-warning',
+                                };
                             @endphp
-                            <tr wire:key="prod-order-{{ $order->id }}">
-                                <td class="font-semibold">{{ $order->invoice_number }}</td>
-                                <td class="text-xs">{{ $order->created_at?->format('d/m/Y H:i') }}</td>
-                                <td>
-                                    <span class="badge badge-soft {{ $order->status_order === 'Take away' ? 'badge-warning' : 'badge-info' }}">
-                                        {{ $order->status_order }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="font-semibold text-sm">{{ $order->service_identity }}</div>
-                                    @if($order->status_order === 'Dine in' && $order->table_number)
-                                        <div class="text-xs text-base-content/60">Meja: {{ $order->table_number }}</div>
-                                    @endif
-                                </td>
-                                <td>
-                                    @php
-                                        $statusBadge = match($order->production_status) {
-                                            'cooking' => 'badge-info',
-                                            'done' => 'badge-success',
-                                            'delivered' => 'badge-primary',
-                                            'completed' => 'badge-neutral',
-                                            default => 'badge-warning',
-                                        };
-                                    @endphp
-                                    <span class="badge badge-soft {{ $statusBadge }}">{{ $order->production_status_label }}</span>
-                                </td>
-                                <td class="text-center">
-                                    <x-partials.dropdown-action
-                                        :id="$order->id"
-                                        :showView="true"
-                                        :viewRoute="route('production.orders.detail', $order->id)"
-                                        :showEdit="false"
-                                        :showDelete="false"
-                                        :customActions="$prodActions"
-                                    />
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-10 text-base-content/50">
-                                    Belum ada pesanan yang masuk.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                            <span class="badge badge-soft {{ $statusBadge }}">{{ $order->production_status_label }}</span>
+                        </td>
+                        <td class="text-center">
+                            <x-partials.dropdown-action
+                                :id="$order->id"
+                                :showView="true"
+                                :viewRoute="route('production.orders.detail', $order->id)"
+                                :showEdit="false"
+                                :showDelete="false"
+                                :customActions="$prodActions"
+                            />
+                        </td>
+                    </tr>
+                @endforeach
+            </x-partials.table>
 
             <div class="mt-4">
-                {{ $orders->links() }}
+                <x-partials.pagination :paginator="$orders" />
             </div>
         </div>
     </div>

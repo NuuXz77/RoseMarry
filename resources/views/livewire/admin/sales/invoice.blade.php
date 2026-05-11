@@ -189,6 +189,12 @@
                                 <span class="text-right">{{ $sale->table_number }}</span>
                             </div>
                         @endif
+                        @if ($sale->catatan)
+                            <div class="flex justify-between gap-3">
+                                <span>Catatan:</span>
+                                <span class="text-right">{{ $sale->catatan }}</span>
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Divider --}}
@@ -358,6 +364,12 @@
                         </h3>
                     </div>
                     <div class="p-5 space-y-2 text-sm">
+                        @if ($sale->catatan)
+                            <div class="flex justify-between border-b border-base-200 pb-2 mb-2">
+                                <span class="text-base-content/60">Catatan</span>
+                                <span class="font-bold text-warning">{{ $sale->catatan }}</span>
+                            </div>
+                        @endif
                         <div class="flex justify-between">
                             <span class="text-base-content/60">Subtotal</span>
                             <span>Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</span>

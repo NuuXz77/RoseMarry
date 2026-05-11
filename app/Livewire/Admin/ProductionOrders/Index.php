@@ -7,11 +7,13 @@ use App\Models\Sales;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
 #[Title('Antrian Pesanan')]
 class Index extends Component
 {
+    use WithPagination;
     public string $search = '';
     public string $filterStatus = '';
     public string $filterService = '';

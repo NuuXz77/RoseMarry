@@ -46,6 +46,7 @@ class Sales extends Model
         'change_amount',     // Kembalian
         'payment_method',    // Enum: 'cash', 'qris', 'transfer'
         'status',            // Enum: 'paid', 'unpaid', 'cancelled'
+        'catatan',           // Catatan dari pelanggan
     ];
 
     protected $casts = [
