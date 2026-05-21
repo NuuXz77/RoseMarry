@@ -233,10 +233,22 @@ class Checkout extends Component
                 $queueNumber = now()->format('Ymd') . '-' . str_pad($nextQueue, 3, '0', STR_PAD_LEFT);
             }
 
+            // Auto-create or find customer from guest_name
+            $resolvedCustomerId = $this->customer_id ?: null;
+            $resolvedGuestName  = null;
+
+            if (!$resolvedCustomerId && trim($this->guest_name) !== '') {
+                $customer = Customers::firstOrCreate(
+                    ['name' => trim($this->guest_name)],
+                    ['status' => true]
+                );
+                $resolvedCustomerId = $customer->id;
+            }
+
             $salePayload = [
                 'invoice_number'     => $invoiceNumber,
-                'customer_id'        => $this->customer_id ?: null,
-                'guest_name'         => $this->customer_id ? null : ($this->guest_name ?: null),
+                'customer_id'        => $resolvedCustomerId,
+                'guest_name'         => $resolvedCustomerId ? null : null,
                 'status_order'       => $this->status_order,
                 'table_number'       => $this->status_order === Sales::ORDER_STATUS_DINE_IN ? ($this->table_number ?: null) : null,
                 'shift_id'           => $this->shift_id,

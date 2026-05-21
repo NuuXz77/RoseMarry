@@ -151,6 +151,7 @@ class PermissionSeeder extends Seeder
 
             // Laporan & Analitik
             ['name' => 'reports.sales.view', 'category_id' => optional($reportCategory)->id],
+            ['name' => 'reports.customers.view', 'category_id' => optional($reportCategory)->id],
             ['name' => 'reports.purchases.view', 'category_id' => optional($reportCategory)->id],
             ['name' => 'reports.productions.view', 'category_id' => optional($reportCategory)->id],
             ['name' => 'reports.stocks.view', 'category_id' => optional($reportCategory)->id],
@@ -250,6 +251,7 @@ class PermissionSeeder extends Seeder
             'reports.purchases' => 'Laporan Pembelian',
             'reports.productions' => 'Laporan Produksi',
             'reports.stocks' => 'Laporan Stok',
+            'reports.customers' => 'Laporan Pelanggan',
             'reports.schedules' => 'Laporan Jadwal',
             'master.categories' => 'Master Kategori',
             'master.units' => 'Master Satuan',

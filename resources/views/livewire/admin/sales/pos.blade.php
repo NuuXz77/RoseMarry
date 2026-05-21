@@ -497,24 +497,123 @@
 
                     {{-- Order Info --}}
                     <div class="grid grid-cols-1 gap-3 shrink-0">
-                        <x-form.select
-                            label="Pelanggan"
-                            name="customer_id"
-                            placeholder="Guest (Umum)"
-                            class="select-sm"
-                            x-model="customerId">
-                            @foreach($customers as $customer)
-                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                            @endforeach
-                        </x-form.select>
+                        {{-- Pelanggan: Searchable + Auto-Create --}}
+                        <div x-data="{
+                            custOpen: false,
+                            custSearch: '',
+                            custOptions: @js($customers->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'phone' => $c->phone])->toArray()),
+                            custSelectedLabel: '',
 
-                        <div x-show="!customerId" x-cloak>
-                            <x-form.input
-                                label="Nama Pembeli"
-                                name="guest_name"
-                                placeholder="Isi jika bukan member"
-                                size="input-sm"
-                                x-model="guestName" />
+                            get filteredCust() {
+                                if (!this.custSearch) return this.custOptions;
+                                const q = this.custSearch.toLowerCase();
+                                return this.custOptions.filter(c =>
+                                    c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q))
+                                );
+                            },
+
+                            selectCust(c) {
+                                this.customerId = String(c.id);
+                                this.custSelectedLabel = c.name;
+                                this.guestName = '';
+                                this.custSearch = '';
+                                this.custOpen = false;
+                            },
+
+                            useAsGuest() {
+                                this.customerId = '';
+                                this.guestName = this.custSearch.trim();
+                                this.custSelectedLabel = this.custSearch.trim();
+                                this.custOpen = false;
+                            },
+
+                            clearCust() {
+                                this.customerId = '';
+                                this.guestName = '';
+                                this.custSelectedLabel = '';
+                                this.custSearch = '';
+                            },
+
+                            initCust() {
+                                if (this.customerId) {
+                                    const c = this.custOptions.find(o => o.id == this.customerId);
+                                    if (c) this.custSelectedLabel = c.name;
+                                } else if (this.guestName) {
+                                    this.custSelectedLabel = this.guestName;
+                                }
+                            }
+                        }" x-init="initCust()" @click.away="custOpen = false">
+                            <div class="form-control">
+                                <label class="label pb-1">
+                                    <span class="label-text text-xs font-semibold uppercase tracking-widest text-base-content/50">Pelanggan / Nama Pembeli</span>
+                                </label>
+                                <div class="relative">
+                                    {{-- Display Field --}}
+                                    <div role="button" tabindex="0"
+                                        @click="custOpen = !custOpen; $nextTick(() => $refs.custInput?.focus())"
+                                        @keydown.enter.prevent="custOpen = !custOpen; $nextTick(() => $refs.custInput?.focus())"
+                                        class="input input-bordered input-sm w-full flex items-center gap-2 cursor-pointer hover:border-primary/50 transition-all text-left"
+                                        :class="custOpen ? 'border-primary ring-2 ring-primary/10' : ''">
+                                        <x-heroicon-o-user-circle class="w-4 h-4 opacity-40 shrink-0" />
+                                        <div class="flex-1 min-w-0">
+                                            <span class="truncate text-sm"
+                                                x-text="custSelectedLabel || 'Cari / ketik nama pembeli...'"
+                                                :class="!custSelectedLabel ? 'opacity-40' : 'font-medium'"></span>
+                                        </div>
+                                        <button type="button" x-show="custSelectedLabel"
+                                            @click.stop="clearCust()"
+                                            class="btn btn-ghost btn-xs btn-circle">
+                                            <x-heroicon-o-x-mark class="w-3 h-3" />
+                                        </button>
+                                        <x-heroicon-o-chevron-down class="w-3.5 h-3.5 opacity-40 transition-transform"
+                                            x-bind:class="custOpen ? 'rotate-180' : ''" />
+                                    </div>
+
+                                    {{-- Dropdown --}}
+                                    <div x-show="custOpen" x-transition.opacity x-cloak
+                                        class="absolute z-50 w-full mt-1.5 bg-base-100 border border-base-300 rounded-xl shadow-2xl overflow-hidden">
+                                        <div class="p-2.5 border-b border-base-200 bg-base-200/20">
+                                            <div class="relative">
+                                                <x-heroicon-o-magnifying-glass class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                                                <input type="text" x-model="custSearch" x-ref="custInput"
+                                                    placeholder="Cari nama / ketik nama baru..."
+                                                    class="input input-sm bg-base-100 border-base-300 w-full pl-9 focus:border-primary focus:ring-0 rounded-lg text-sm"
+                                                    @keydown.escape="custOpen = false"
+                                                    @keydown.enter.prevent="filteredCust.length ? selectCust(filteredCust[0]) : (custSearch.trim() ? useAsGuest() : null)"
+                                                    @click.stop>
+                                            </div>
+                                        </div>
+                                        <div class="max-h-56 overflow-y-auto p-1.5 scrollbar-hide">
+                                            {{-- Existing customers --}}
+                                            <template x-for="c in filteredCust" :key="c.id">
+                                                <div @click="selectCust(c)"
+                                                    class="px-3 py-2 text-sm hover:bg-primary hover:text-white rounded-lg cursor-pointer transition-all flex items-center justify-between"
+                                                    :class="customerId == c.id ? 'bg-primary/10 text-primary font-bold' : 'text-base-content/80'">
+                                                    <div class="flex flex-col">
+                                                        <span x-text="c.name" class="font-medium"></span>
+                                                        <span x-show="c.phone" x-text="c.phone" class="text-[10px] opacity-60"></span>
+                                                    </div>
+                                                    <span class="badge badge-xs badge-primary badge-soft">Pelanggan</span>
+                                                </div>
+                                            </template>
+                                            {{-- Option to use as new guest --}}
+                                            <template x-if="custSearch.trim() && filteredCust.filter(c => c.name.toLowerCase() === custSearch.trim().toLowerCase()).length === 0">
+                                                <div @click="useAsGuest()"
+                                                    class="px-3 py-2 text-sm hover:bg-success hover:text-white rounded-lg cursor-pointer transition-all flex items-center gap-2 border-t border-base-200 mt-1 pt-2">
+                                                    <x-heroicon-o-user-plus class="w-4 h-4" />
+                                                    <span>Gunakan "<span x-text="custSearch.trim()" class="font-bold"></span>" sebagai pembeli baru</span>
+                                                </div>
+                                            </template>
+                                            {{-- Empty state --}}
+                                            <div x-show="filteredCust.length === 0 && !custSearch.trim()"
+                                                class="py-8 text-center flex flex-col items-center gap-1 opacity-30">
+                                                <x-heroicon-o-user-group class="w-6 h-6" />
+                                                <span class="text-xs">Ketik nama untuk mencari...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <x-form.select

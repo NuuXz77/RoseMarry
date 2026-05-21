@@ -1,285 +1,373 @@
 <div class="space-y-6">
-    <!-- Header / Cover Area -->
-    <div
-        class="relative w-full h-48 bg-base-100 rounded-b-2xl shadow-sm border-b border-base-200 -mt-6 overflow-hidden">
-        <!-- Subtle Pattern Overlay -->
-        <div class="absolute inset-0 opacity-40"
-            style="background-image: radial-gradient(#000000 0.5px, transparent 0.5px); background-size: 24px 24px;">
-        </div>
 
-        <!-- Content -->
-        <div class="absolute -bottom-12 left-8 flex items-end z-10">
-            <div class="avatar online">
-                <div
-                    class="w-24 h-24 rounded-full ring ring-base-100 ring-offset-base-100 ring-offset-2 shadow-2xl bg-base-100 text-base-content grid place-items-center">
-                    @if ($user->avatar)
-                        <img src="{{ $user->avatar }}" alt="{{ $user->name }}" />
-                    @else
-                        <span class="text-3xl font-bold">{{ substr($user->name, 0, 1) }}</span>
-                    @endif
-                </div>
-            </div>
-            <div class="mb-2 ml-6">
-                <h1 class="text-2xl font-bold text-base-content tracking-tight">{{ $user->name }}</h1>
-                <div class="flex gap-2">
-                    <span class="badge badge-sm badge-outline text-base-content/70 border-base-content/20">
-                        {{ ucfirst($user->getRoleNames()->first() ?? 'User') }}
-                    </span>
-                    <span class="badge badge-sm badge-success gap-1 text-white border-0">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                        Active
-                    </span>
-                </div>
-            </div>
-        </div>
+    {{-- ═══════════════════════════════════════════
+         HEADER / PROFILE SUMMARY
+    ═══════════════════════════════════════════ --}}
+    <div class="card bg-base-100 border border-base-300 overflow-hidden">
+        <div class="card-body pt-0">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 
-        <!-- Action Buttons -->
-        <div class="absolute bottom-4 right-8 flex gap-2 z-10">
-            @if(!$isEditing)
-                <button wire:click="toggleEdit"
-                    class="btn btn-sm btn-ghost border border-base-300 hover:bg-base-200 hover:border-base-400 transition-all">
-                    <x-heroicon-o-pencil-square class="w-4 h-4" />
-                    Edit Profil
-                </button>
-            @else
-                <button wire:click="toggleEdit" class="btn btn-sm btn-error text-white">
-                    <x-heroicon-o-x-mark class="w-4 h-4" />
-                    Batal
-                </button>
-                <button wire:click="updateProfile" class="btn btn-sm btn-success text-white">
-                    <x-heroicon-o-check class="w-4 h-4" />
-                    Simpan
-                </button>
-            @endif
-        </div>
-    </div>
-
-    <!-- Main Content Grid -->
-    <div class="pt-16 grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Left Column: Identity & Access -->
-        <div class="space-y-6">
-            <!-- Account Summary Card -->
-            <div class="card bg-base-100 border border-base-300">
-                <div class="card-body p-5">
-                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                        <x-heroicon-o-identification class="w-5 h-5 text-primary" />
-                        Info Akun
-                    </h3>
-
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase font-semibold">Username</p>
-                            @if($isEditing)
-                                <input type="text" wire:model="username"
-                                    class="input input-sm input-bordered w-full mt-1 @error('username') input-error @enderror" />
-                                @error('username') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                {{-- Avatar + Name --}}
+                <div class="flex items-end gap-4 -mt-8">
+                    <div class="w-16 h-16 rounded-full ring-2 ring-base-100 ring-offset-0 bg-primary/10 text-primary grid place-items-center shadow-sm flex-shrink-0">
+                        <span class="text-xl font-semibold">{{ strtoupper(substr($user->username, 0, 1)) }}</span>
+                    </div>
+                    <div class="pb-1">
+                        <h1 class="text-lg font-semibold text-base-content leading-tight">{{ $user->username }}</h1>
+                        <div class="mt-1.5">
+                            @if($user->is_active)
+                                <span class="badge badge-success badge-sm badge-soft gap-1">
+                                    <x-heroicon-o-check class="w-3 h-3" />
+                                    Aktif
+                                </span>
                             @else
-                                <p class="text-base font-medium">@ {{ $user->username }}</p>
-                            @endif
-                        </div>
-
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase font-semibold">Email</p>
-                            @if($isEditing)
-                                <input type="email" wire:model="email"
-                                    class="input input-sm input-bordered w-full mt-1 @error('email') input-error @enderror" />
-                                @error('email') <span class="text-error text-xs">{{ $message }}</span> @enderror
-                            @else
-                                <p class="text-base font-medium">{{ $user->email }}</p>
-                                <span class="badge badge-xs badge-success badge-outline mt-1 gap-1">
-                                    <x-heroicon-o-check-badge class="w-3 h-3" /> Terverifikasi
+                                <span class="badge badge-error badge-sm badge-soft gap-1">
+                                    <x-heroicon-o-x-mark class="w-3 h-3" />
+                                    Nonaktif
                                 </span>
                             @endif
                         </div>
+                    </div>
+                </div>
 
-                        <div class="divider my-1"></div>
+                {{-- Action Buttons --}}
+                <div class="flex items-center gap-2 pb-1">
+                    @if(!$isEditing)
+                        <button wire:click="toggleEdit" class="btn btn-sm btn-outline gap-2">
+                            <x-heroicon-o-pencil-square class="w-4 h-4" />
+                            Edit Profil
+                        </button>
+                    @else
+                        <button wire:click="toggleEdit" class="btn btn-sm btn-ghost gap-2">
+                            <x-heroicon-o-x-mark class="w-4 h-4" />
+                            Batal
+                        </button>
+                        <button wire:click="updateProfile" class="btn btn-sm btn-primary gap-2">
+                            <x-heroicon-o-check class="w-4 h-4" />
+                            Simpan
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <div>
-                            <p class="text-xs text-base-content/60 uppercase font-semibold">Bergabung Sejak</p>
-                            <p class="text-sm">{{ $user->created_at->format('d F Y') }}</p>
-                            <p class="text-xs text-base-content/40">{{ $user->created_at->diffForHumans() }}</p>
+    {{-- ═══════════════════════════════════════════
+         MAIN CONTENT — 1/3 + 2/3 GRID
+    ═══════════════════════════════════════════ --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {{-- ──────────────────────────────────────
+             LEFT COLUMN  (1 col)
+        ────────────────────────────────────── --}}
+        <div class="space-y-6">
+
+            {{-- Info Akun --}}
+            <div class="card bg-base-100 border border-base-300">
+                <div class="card-body gap-0">
+
+                    {{-- Card Title --}}
+                    <div class="flex items-center gap-2.5 mb-5">
+                        <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary grid place-items-center flex-shrink-0">
+                            <x-heroicon-o-identification class="w-4 h-4" />
+                        </span>
+                        <h3 class="font-semibold text-sm text-base-content">Info Akun</h3>
+                    </div>
+
+                    <div class="space-y-4">
+
+                        {{-- Username --}}
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-base-200/60 text-base-content/70 grid place-items-center flex-shrink-0">
+                                <x-heroicon-o-user class="w-4 h-4" />
+                            </span>
+                            <div class="flex-1">
+                                <p class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1">Username</p>
+                                @if($isEditing)
+                                    <input type="text" wire:model="username"
+                                        class="input input-sm input-bordered w-full @error('username') input-error @enderror" />
+                                    @error('username') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                                @else
+                                    <p class="text-sm font-medium text-base-content">{{ $user->username }}</p>
+                                @endif
+                            </div>
                         </div>
+
+                        <div class="divider my-0"></div>
+
+                        {{-- Status --}}
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-base-200/60 text-base-content/70 grid place-items-center flex-shrink-0">
+                                <x-heroicon-o-shield-check class="w-4 h-4" />
+                            </span>
+                            <div class="flex-1">
+                                <p class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1">Status Akun</p>
+                                @if($user->is_active)
+                                    <span class="badge badge-success badge-sm badge-soft gap-1">
+                                        <x-heroicon-o-check class="w-1.5 h-1.5" />
+                                        Aktif
+                                    </span>
+                                @else
+                                    <span class="badge badge-error badge-sm badge-soft gap-1">
+                                        <x-heroicon-o-x-circle class="w-1.5 h-1.5" />
+                                        Nonaktif
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="divider my-0"></div>
+
+                        {{-- Last Login --}}
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-base-200/60 text-base-content/70 grid place-items-center flex-shrink-0">
+                                <x-heroicon-o-clock class="w-4 h-4" />
+                            </span>
+                            <div class="flex-1">
+                                <p class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1">Terakhir Login</p>
+                                <p class="text-sm font-medium text-base-content">
+                                    {{ optional($user->terakhir_login)->format('d F Y, H:i') ?? '-' }}
+                                </p>
+                                <p class="text-xs text-base-content/40 mt-0.5">
+                                    {{ optional($user->terakhir_login)->diffForHumans() ?? '-' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Last IP --}}
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-base-200/60 text-base-content/70 grid place-items-center flex-shrink-0">
+                                <x-heroicon-o-globe-alt class="w-4 h-4" />
+                            </span>
+                            <div class="flex-1">
+                                <p class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1">IP Login Terakhir</p>
+                                <p class="text-sm font-medium font-mono text-base-content">{{ $user->last_login_ip ?? '-' }}</p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- Security Card -->
+            {{-- Keamanan --}}
             <div class="card bg-base-100 border border-base-300">
-                <div class="card-body p-5">
-                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                        <x-heroicon-o-shield-check class="w-5 h-5 text-secondary" />
-                        Keamanan
-                    </h3>
+                <div class="card-body gap-0">
+
+                    {{-- Card Title --}}
+                    <div class="flex items-center gap-2.5 mb-5">
+                        <span class="w-7 h-7 rounded-lg bg-secondary/10 text-secondary grid place-items-center flex-shrink-0">
+                            <x-heroicon-o-shield-check class="w-4 h-4" />
+                        </span>
+                        <h3 class="font-semibold text-sm text-base-content">Keamanan</h3>
+                    </div>
 
                     @if(!$isChangingPassword)
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between gap-3">
                             <div>
-                                <p class="font-medium">Password</p>
-                                <p class="text-xs text-base-content/60">Terakhir diubah 3 bulan lalu</p>
+                                <p class="text-sm font-medium text-base-content">Password</p>
+                                <p class="text-xs text-base-content/40 mt-0.5">Terakhir diubah 3 bulan lalu</p>
                             </div>
                             <button wire:click="toggleChangePassword" class="btn btn-sm btn-outline">Ubah</button>
                         </div>
                     @else
-                        <form wire:submit.prevent="updatePassword" class="space-y-3">
+                        <div class="space-y-3">
                             <div>
-                                <label class="label py-0"><span class="label-text text-xs">Password Saat Ini</span></label>
+                                <label class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1 block">Password Saat Ini</label>
                                 <input type="password" wire:model="current_password"
-                                    class="input input-sm input-bordered w-full" placeholder="********" />
-                                @error('current_password') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                                    class="input input-sm input-bordered w-full" placeholder="••••••••" />
+                                @error('current_password') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="label py-0"><span class="label-text text-xs">Password Baru</span></label>
+                                <label class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1 block">Password Baru</label>
                                 <input type="password" wire:model="new_password"
                                     class="input input-sm input-bordered w-full" placeholder="Min. 8 karakter" />
-                                @error('new_password') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                                @error('new_password') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="label py-0"><span class="label-text text-xs">Konfirmasi
-                                        Password</span></label>
+                                <label class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1 block">Konfirmasi Password</label>
                                 <input type="password" wire:model="new_password_confirmation"
                                     class="input input-sm input-bordered w-full" placeholder="Ulangi password baru" />
                             </div>
-                            <div class="flex justify-end gap-2 pt-2">
-                                <button type="button" wire:click="toggleChangePassword"
-                                    class="btn btn-xs btn-ghost">Batal</button>
-                                <button type="submit" class="btn btn-xs btn-primary">Simpan Password</button>
+                            <div class="flex justify-end gap-2 pt-1">
+                                <button type="button" wire:click="toggleChangePassword" class="btn btn-xs btn-ghost">Batal</button>
+                                <button wire:click="updatePassword" class="btn btn-xs btn-primary">Simpan Password</button>
                             </div>
-                        </form>
+                        </div>
                     @endif
+
                 </div>
             </div>
+
         </div>
 
-        <!-- Right Column: Detailed Personal Info & Activity -->
+        {{-- ──────────────────────────────────────
+             RIGHT COLUMN  (2 cols)
+        ────────────────────────────────────── --}}
         <div class="col-span-1 lg:col-span-2 space-y-6">
-            <!-- Personal Data Card -->
-            <div class="card bg-base-100 border border-base-300 h-full">
-                <div class="card-body">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="font-bold text-lg">Biodata Diri</h3>
-                            <p class="text-sm text-base-content/60">Informasi lengkap pengguna sistem</p>
-                        </div>
-                        @if($isEditing)
-                            <div class="badge badge-warning gap-1 animate-pulse">
-                                <x-heroicon-o-pencil class="w-3 h-3" /> Mode Edit
-                            </div>
-                        @endif
+
+            {{-- Ringkasan Aktivitas --}}
+            <div class="card bg-base-100 border border-base-300">
+                <div class="card-body gap-0">
+
+                    {{-- Card Title --}}
+                    <div class="flex items-center gap-2.5 mb-5">
+                        <span class="w-7 h-7 rounded-lg bg-accent/10 text-accent grid place-items-center flex-shrink-0">
+                            <x-heroicon-o-chart-bar class="w-4 h-4" />
+                        </span>
+                        <h3 class="font-semibold text-sm text-base-content">Ringkasan Aktivitas</h3>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Nama Lengkap -->
-                        <div class="form-control md:col-span-3">
-                            <label class="label">
-                                <span class="label-text font-medium text-base-content/70">Nama Lengkap</span>
-                            </label>
-                            @if($isEditing)
-                                <input type="text" wire:model="name"
-                                    class="input input-bordered w-full input-lg @error('name') input-error @enderror" />
-                                @error('name') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
-                            @else
-                                <div class="px-3 py-4 bg-base-200/50 rounded-lg border border-transparent">
-                                    <p class="font-semibold text-lg">{{ $user->name }}</p>
-                                </div>
-                            @endif
-                        </div>
-
-                        <!-- Role (Read Only) -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium text-base-content/70">Role / Jabatan</span>
-                            </label>
-                            <div
-                                class="px-3 py-2 bg-base-200/50 rounded-lg border border-transparent flex items-center justify-between">
-                                <p class="font-semibold">{{ ucfirst($user->getRoleNames()->first() ?? 'User') }}</p>
-                                <x-heroicon-o-lock-closed class="w-4 h-4 text-base-content/40"
-                                    title="Tidak dapat diubah" />
+                    {{-- Stat Cards --}}
+                    <div class="stats stats-vertical lg:stats-horizontal bg-base-200/40 border border-base-300 w-full mb-5">
+                        <div class="stat">
+                            <div class="stat-figure text-primary">
+                                <x-heroicon-o-arrow-right-on-rectangle class="w-5 h-5" />
                             </div>
+                            <div class="stat-title">Total Login</div>
+                            <div class="stat-value text-base">142</div>
+                            <div class="stat-desc">Sejak bergabung</div>
                         </div>
-
-                        <!-- Additional Info Placeholders (Bisa ditambah nanti) -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium text-base-content/70">Unit Kerja</span>
-                            </label>
-                            <div class="px-3 py-2 bg-base-200/50 rounded-lg border border-transparent">
-                                <p class="font-medium text-base-content/60">-</p>
+                        <div class="stat">
+                            <div class="stat-figure text-accent">
+                                <x-heroicon-o-document-text class="w-5 h-5" />
                             </div>
+                            <div class="stat-title">Transaksi</div>
+                            <div class="stat-value text-base">38</div>
+                            <div class="stat-desc">Bulan ini</div>
                         </div>
-
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium text-base-content/70">Nomor Telepon</span>
-                            </label>
-                            <div class="px-3 py-2 bg-base-200/50 rounded-lg border border-transparent">
-                                <p class="font-medium text-base-content/60">-</p>
+                        <div class="stat">
+                            <div class="stat-figure text-info">
+                                <x-heroicon-o-clock class="w-5 h-5" />
                             </div>
+                            <div class="stat-title">Sesi Aktif</div>
+                            <div class="stat-value text-base">1</div>
+                            <div class="stat-desc">Perangkat</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-figure text-secondary">
+                                <x-heroicon-o-user class="w-5 h-5" />
+                            </div>
+                            <div class="stat-title">Bergabung</div>
+                            <div class="stat-value text-base">{{ optional($user->created_at)->format('Y') ?? '-' }}</div>
+                            <div class="stat-desc">Tahun</div>
                         </div>
                     </div>
+
+                    {{-- Login Detail --}}
+                    <div class="stats stats-vertical sm:stats-horizontal bg-base-200/40 border border-base-300 w-full">
+                        <div class="stat">
+                            <div class="stat-figure text-secondary">
+                                <x-heroicon-o-clock class="w-5 h-5" />
+                            </div>
+                            <div class="stat-title">Terakhir Login</div>
+                            <div class="stat-value text-sm">
+                                {{ optional($user->terakhir_login)->format('d F Y, H:i') ?? '-' }}
+                            </div>
+                            <div class="stat-desc">{{ optional($user->terakhir_login)->diffForHumans() ?? '-' }}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-figure text-secondary">
+                                <x-heroicon-o-globe-alt class="w-5 h-5" />
+                            </div>
+                            <div class="stat-title">IP Login Terakhir</div>
+                            <div class="stat-value text-sm font-mono">{{ $user->last_login_ip ?? '-' }}</div>
+                            <div class="stat-desc">Jaringan lokal</div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            <!-- Recent Activity (Placeholder) -->
+            {{-- Aktivitas Terakhir --}}
             <div class="card bg-base-100 border border-base-300">
-                <div class="card-body">
-                    @php
-                        $activeFilterCount = $activityFilter !== '' ? 1 : 0;
-                    @endphp
-                    <div class="flex items-center justify-between gap-3 mb-4">
-                        <h3 class="font-bold text-lg">Aktivitas Terakhir</h3>
+                <div class="card-body gap-0">
+
+                    {{-- Card Header --}}
+                    <div class="flex items-center justify-between gap-3 mb-5">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-lg bg-info/10 text-info grid place-items-center flex-shrink-0">
+                                <x-heroicon-o-clock class="w-4 h-4" />
+                            </span>
+                            <h3 class="font-semibold text-sm text-base-content">Aktivitas Terakhir</h3>
+                        </div>
+
+                        {{-- Filter --}}
                         <div class="dropdown dropdown-end">
-                            <label tabindex="0" class="btn btn-ghost btn-sm gap-2">
-                                <x-heroicon-o-funnel class="w-5 h-5" />
+                            <label tabindex="0" class="btn btn-ghost btn-sm gap-1.5 text-xs">
+                                <x-heroicon-o-funnel class="w-3.5 h-3.5" />
                                 Filter
-                                @if ($activeFilterCount > 0)
-                                    <span class="badge badge-primary badge-sm">{{ $activeFilterCount }}</span>
+                                @php $activeFilterCount = $activityFilter !== '' ? 1 : 0; @endphp
+                                @if($activeFilterCount > 0)
+                                    <span class="badge badge-primary badge-xs">{{ $activeFilterCount }}</span>
                                 @endif
                             </label>
-                            <div tabindex="0" class="dropdown-content z-10 card card-compact w-72 p-4 bg-base-100 border border-base-300 mt-2">
+                            <div tabindex="0" class="dropdown-content z-10 card card-compact w-60 bg-base-100 border border-base-300 shadow-lg mt-2 p-4">
                                 <div class="space-y-3">
-                                    <div class="form-control">
-                                        <label class="label"><span class="label-text font-bold text-xs uppercase">Jenis Aktivitas</span></label>
-                                        <select wire:model.live="activityFilter" class="select select-sm select-bordered">
+                                    <div>
+                                        <label class="text-[10px] font-semibold uppercase tracking-widest text-base-content/40 mb-1.5 block">Jenis Aktivitas</label>
+                                        <select wire:model.live="activityFilter" class="select select-sm select-bordered w-full">
                                             <option value="">Semua Aktivitas</option>
                                             <option value="login">Login</option>
                                             <option value="profile">Profil</option>
                                             <option value="sales">Transaksi</option>
                                         </select>
                                     </div>
-                                    <button wire:click="resetFilters" class="btn btn-ghost btn-sm w-full">Reset Filter</button>
+                                    <button wire:click="resetFilters" class="btn btn-ghost btn-sm w-full text-xs">Reset Filter</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <ul class="steps steps-vertical">
+
+                    {{-- Activity List --}}
+                    <div class="space-y-0 divide-y divide-base-200">
+
                         @if($activityFilter === '' || $activityFilter === 'login')
-                            <li class="step step-primary" data-content="●">
-                                <div class="text-left ml-2">
-                                    <p class="font-bold text-sm">Login ke sistem</p>
-                                    <p class="text-xs text-base-content/60">Baru saja</p>
+                            <div class="flex items-start gap-3.5 py-3 first:pt-0 last:pb-0">
+                                <span class="w-7 h-7 rounded-full bg-primary/10 text-primary grid place-items-center flex-shrink-0 mt-0.5">
+                                    <x-heroicon-o-arrow-right-on-rectangle class="w-3.5 h-3.5" />
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-base-content">Login ke sistem</p>
+                                    <p class="text-xs text-base-content/40 mt-0.5">Baru saja</p>
                                 </div>
-                            </li>
+                                <span class="badge badge-sm badge-ghost text-xs">Login</span>
+                            </div>
                         @endif
+
                         @if($activityFilter === '' || $activityFilter === 'profile')
-                            <li class="step" data-content="●">
-                                <div class="text-left ml-2">
-                                    <p class="font-bold text-sm">Memperbarui data profil</p>
-                                    <p class="text-xs text-base-content/60">Kemarin, 14:30</p>
+                            <div class="flex items-start gap-3.5 py-3 first:pt-0 last:pb-0">
+                                <span class="w-7 h-7 rounded-full bg-base-200 text-base-content/50 grid place-items-center flex-shrink-0 mt-0.5">
+                                    <x-heroicon-o-user class="w-3.5 h-3.5" />
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-base-content">Memperbarui data profil</p>
+                                    <p class="text-xs text-base-content/40 mt-0.5">Kemarin, 14:30</p>
                                 </div>
-                            </li>
+                                <span class="badge badge-sm badge-ghost text-xs">Profil</span>
+                            </div>
                         @endif
+
                         @if($activityFilter === '' || $activityFilter === 'sales')
-                            <li class="step" data-content="●">
-                                <div class="text-left ml-2">
-                                    <p class="font-bold text-sm">Melakukan transaksi penjualan #INV-001</p>
-                                    <p class="text-xs text-base-content/60">18 Feb 2026, 09:15</p>
+                            <div class="flex items-start gap-3.5 py-3 first:pt-0 last:pb-0">
+                                <span class="w-7 h-7 rounded-full bg-base-200 text-base-content/50 grid place-items-center flex-shrink-0 mt-0.5">
+                                    <x-heroicon-o-document-text class="w-3.5 h-3.5" />
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-base-content">Transaksi penjualan
+                                        <span class="font-mono text-xs text-base-content/60">#INV-001</span>
+                                    </p>
+                                    <p class="text-xs text-base-content/40 mt-0.5">18 Feb 2026, 09:15</p>
                                 </div>
-                            </li>
+                                <span class="badge badge-sm badge-ghost text-xs">Transaksi</span>
+                            </div>
                         @endif
-                    </ul>
+
+                    </div>
+
                 </div>
             </div>
+
         </div>
     </div>
+
 </div>

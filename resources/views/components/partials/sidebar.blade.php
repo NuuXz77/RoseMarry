@@ -81,6 +81,7 @@
                     $transactionItems = 0;
 
                     $canReportSales = false;
+                    $canReportCustomers = false;
                     $canReportPurchases = false;
                     $canReportProductions = false;
                     $canReportStocks = false;
@@ -148,12 +149,14 @@
                             ($canSales ? 1 : 0);
 
                         $canReportSales = $user->can('reports.sales.view');
+                        $canReportCustomers = $user->can('reports.customers.view');
                         $canReportPurchases = $user->can('reports.purchases.view');
                         $canReportProductions = $user->can('reports.productions.view');
                         $canReportStocks = $user->can('reports.stocks.view');
                         $canReportSchedules = !$hideSchedulingMenu && $user->can('reports.schedules.view');
                         $reportItems =
                             ($canReportSales ? 1 : 0) +
+                            ($canReportCustomers ? 1 : 0) +
                             ($canReportPurchases ? 1 : 0) +
                             ($canReportProductions ? 1 : 0) +
                             ($canReportStocks ? 1 : 0) +
@@ -218,6 +221,7 @@
                         'canProductionOrders' => false,
                         'canSales' => false,
                         'canReportSales' => false,
+                        'canReportCustomers' => false,
                         'canReportPurchases' => false,
                         'canReportProductions' => false,
                         'canReportStocks' => false,
@@ -785,6 +789,15 @@
                                                 class="{{ request()->is('reports/sales*') ? 'bg-base-300' : '' }} flex items-center gap-2">
                                                 <x-heroicon-o-chart-bar class="w-4 h-4" />
                                                 Laporan Penjualan
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if ($canReportCustomers)
+                                        <li>
+                                            <a wire:navigate href="/reports/customers"
+                                                class="{{ request()->is('reports/customers*') ? 'bg-base-300' : '' }} flex items-center gap-2">
+                                                <x-heroicon-o-user-group class="w-4 h-4" />
+                                                Laporan Pelanggan
                                             </a>
                                         </li>
                                     @endif

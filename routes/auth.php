@@ -11,6 +11,11 @@ Route::middleware('guest')->group(function () {
 });
 
 // ============================================
+// CUSTOMER ORDER (SCAN QR)
+// ============================================
+Route::get('/order', App\Livewire\Custumer\Order::class)->name('customer.order');
+
+// ============================================
 // KASIR SISWA — Login PIN
 // Autentikasi berbasis sesi (bukan Laravel Auth).
 // Sidebar Spatie otomatis kosong karena siswa
@@ -197,6 +202,10 @@ Route::middleware('auth')->group(function () {
     // --------------------------------------------
     Route::middleware('can:reports.sales.view')->group(function () {
         Route::get('/reports/sales', App\Livewire\Admin\Reports\Sales\Index::class)->name('reports.sales.index');
+    });
+
+    Route::middleware('can:reports.customers.view')->group(function () {
+        Route::get('/reports/customers', App\Livewire\Admin\Reports\Customers\Index::class)->name('reports.customers.index');
     });
 
     Route::middleware('can:reports.purchases.view')->group(function () {
